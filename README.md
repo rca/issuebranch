@@ -37,6 +37,8 @@ curl -H "Authorization token ${ISSUE_BACKEND_API_KEY}" https://api.github.com/re
 
 ## changetype labels
 
+[[images/refactor-endpoints.png]]
+
 The command expects to find a label prefixed with `changetype:` to create the branch.  For example, some labels can be `changetype:feature`, `changetype:bugfix`, etc.  This prefix will be used to namespace the branch.
 
 
