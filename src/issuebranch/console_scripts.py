@@ -8,6 +8,8 @@ import os
 import sh
 import sys
 
+from slugify import slugify
+
 
 def make_branch(name):
     command_l = 'git checkout -b {} master'.format(name).split()
@@ -40,6 +42,6 @@ def issuebranch():
 
     branch_name = '{}/{}-{}'.format(prefix, issue_number, subject)
 
-    slug = sh.slugify(branch_name)
+    slug = slugify(branch_name)
 
     make_branch(slug)
