@@ -43,6 +43,7 @@ def issuebranch():
 
     branch_name = '{}/{}-{}'.format(prefix, issue_number, subject)
 
-    slug = slugify(branch_name, max_length=MAX_SLUG_LENGTH)
-
+    regex_pattern = r'[^/-a-z0-9_]+'
+    slug = slugify(branch_name, max_length=MAX_SLUG_LENGTH, regex_pattern=regex_pattern)
+    print('SLUG {}'.format(slug))
     make_branch(slug)
