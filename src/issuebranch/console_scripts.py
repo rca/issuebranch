@@ -8,6 +8,9 @@ import os
 import sh
 import sys
 
+from slugify import slugify
+
+MAX_SLUG_LENGTH = 50
 
 def make_branch(name):
     command_l = 'git checkout -b {} master'.format(name).split()
@@ -40,6 +43,9 @@ def issuebranch():
 
     branch_name = '{}/{}-{}'.format(prefix, issue_number, subject)
 
-    slug = sh.slugify(branch_name)
+    # add the forward slash to the allowed regex
+    # default is: r'[^-a-z0-9]+'
+    regex_pattern = r'[^/\-a-z0-9_]+'
+    slug = slugify(branch_name, max_length=MAX_SLUG_LENGTH, regex_pattern=regex_pattern)
 
     make_branch(slug)

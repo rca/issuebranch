@@ -11,7 +11,7 @@ setup(
     author='roberto aguilar',
     author_email='roberto.c.aguilar@gmail.com',
     package_dir={'': 'src'},
-    packages=['issuebranch'],
+    packages=['issuebranch','issuebranch.backends'],
     entry_points={
         'console_scripts': [
             'issue-branch = issuebranch.console_scripts:issuebranch',
@@ -19,5 +19,6 @@ setup(
     },
     install_requires=[
         'requests',
+        'python-slugify',
     ]
 )
