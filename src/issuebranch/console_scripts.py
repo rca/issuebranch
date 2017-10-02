@@ -10,7 +10,7 @@ import sys
 
 from slugify import slugify
 
-MAX_SLUG_LENGTH = 50
+MAX_SLUG_LENGTH = 32
 
 def make_branch(name):
     command_l = 'git checkout -b {} master'.format(name).split()
