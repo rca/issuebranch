@@ -1,12 +1,7 @@
-from __future__ import absolute_import
-
 import os
 import requests
 
-try:
-    from functools import lru_cache
-except ImportError:
-    from functools32 import lru_cache
+from functools import lru_cache
 
 from . import BaseBackend
 from ..exceptions import PrefixError
