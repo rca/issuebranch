@@ -6,20 +6,27 @@ import argparse
 import importlib
 import os
 import sh
+import shlex
 import sys
 
 from slugify import slugify
 
+DEFAULT_BASE_BRANCH = 'origin/master'
 MAX_SLUG_LENGTH = 32
 
-def make_branch(name):
-    command_l = 'git checkout -b {} master'.format(name).split()
+def make_branch(name, base):
+    command_l = 'git checkout -b {} {}'.format(name, base).split()
 
     getattr(sh, command_l[0])(*command_l[1:])
 
 
 def issuebranch():
     parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-b', '--base',
+        default=DEFAULT_BASE_BRANCH,
+        help=f'base branch to make this branch from, default {DEFAULT_BASE_BRANCH}'
+    )
     parser.add_argument('--prefix', help='branch prefix, e.g. feature, bugfix, etc.')
     parser.add_argument('--subject', help='provide subject text instead of fetching')
     parser.add_argument('issue_number', type=int, help='the issue tracker\'s issue number')
@@ -48,4 +55,12 @@ def issuebranch():
     regex_pattern = r'[^/\-a-z0-9_]+'
     slug = slugify(branch_name, max_length=MAX_SLUG_LENGTH, regex_pattern=regex_pattern)
 
-    make_branch(slug)
+    # if the base branch is given as '.', expand that to the current branch
+    base = args.base
+    if base == '.':
+        command_l = shlex.split('git rev-parse --abbrev-ref HEAD')
+        proc = getattr(sh, command_l[0])
+
+        base = proc(*command_l[1:]).stdout.decode('utf8').strip()
+
+    make_branch(slug, base)
