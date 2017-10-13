@@ -5,6 +5,7 @@ create a new branch for the given redmine issue
 import argparse
 import importlib
 import os
+import re
 import sh
 import shlex
 import sys
@@ -13,6 +14,8 @@ from slugify import slugify
 
 DEFAULT_BASE_BRANCH = 'origin/master'
 MAX_SLUG_LENGTH = 32
+
+SUBJECT_EXCLUDE_RE = re.compile(r'[/]')
 
 def make_branch(name, base):
     command_l = 'git checkout -b {} {}'.format(name, base).split()
@@ -47,6 +50,8 @@ def issuebranch():
     subject = args.subject
     if not subject:
         subject = issue.subject
+
+    subject = SUBJECT_EXCLUDE_RE.sub('', subject)
 
     branch_name = '{}/{}-{}'.format(prefix, issue_number, subject)
 
