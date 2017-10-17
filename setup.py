@@ -19,6 +19,7 @@ setup(
     },
     install_requires=[
         'requests',
+        'sh',
         'python-slugify',
     ]
 )
