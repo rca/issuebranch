@@ -7,17 +7,20 @@ from functools import lru_cache as lru_cache_base, wraps
 from . import BaseBackend
 from ..exceptions import PrefixError
 
+CARD_CREATE_ENDPOINT = '/projects/columns/{column_id}/cards'
+CARD_MOVE_ENDPOINT = '/projects/columns/cards/{id}/moves'
+
 ISSUE_BACKEND_API_KEY = os.environ['ISSUE_BACKEND_API_KEY']
 ISSUE_BACKEND_REPO = os.environ['ISSUE_BACKEND_REPO']
 ISSUE_BACKEND_URL = 'https://api.github.com'
 ISSUE_BACKEND_USER = os.environ['ISSUE_BACKEND_USER']
 
 ISSUE_BACKEND_ENDPOINT = '/repos/{}/{}/issues/{{issue}}'.format(ISSUE_BACKEND_USER, ISSUE_BACKEND_REPO)
+ISSUE_LABELS_ENDPOINT = '/repos/{owner}/{repo}/issues/{number}/labels'
 
 PROJECTS_ENDPOINT = '/orgs/{org}/projects'
 
-CARD_CREATE_ENDPOINT = '/projects/columns/{column_id}/cards'
-CARD_MOVE_ENDPOINT = '/projects/columns/cards/{id}/moves'
+REPO_LABELS_ENDPOINT = '/repos/{owner}/{repo}/labels'
 
 SEARCH_ISSUE_ENDPOINT = '/search/issues'
 
@@ -80,6 +83,27 @@ class GithubLinkHeader(object):
         return links
 
 class GithubSession(object):
+    # alias exceptions to make it easy to get without additional imports
+    CardError = CardError
+    PrefixError = PrefixError
+
+    def add_label(self, label):
+        """
+        Adds a label to the current issue
+        """
+        url = self.get_full_url(
+            ISSUE_LABELS_ENDPOINT,
+            owner=ISSUE_BACKEND_USER,
+            repo=ISSUE_BACKEND_REPO,
+            number=self.issue_number
+        )
+
+        data = [
+            label['name'],
+        ]
+
+        return self.request('post', url, json=data)
+
     def create_card(self, column):
         url = self.get_full_url(CARD_CREATE_ENDPOINT, column_id=column['id'])
         data = {
@@ -157,6 +181,18 @@ class GithubSession(object):
 
         return full_url
 
+    def get_labels(self):
+        """
+        Returns all the labels for ISSUE_BACKEND_REPO
+        """
+        url = self.get_full_url(
+            REPO_LABELS_ENDPOINT,
+            owner=ISSUE_BACKEND_USER,
+            repo=ISSUE_BACKEND_REPO
+        )
+
+        return self.request('get', url).json()
+
     def get_project(self, name):
         projects = self.projects
         for project in projects:
@@ -224,8 +260,6 @@ class GithubSession(object):
 
 
 class Backend(BaseBackend, GithubSession):
-    CardError = CardError
-
     @property
     @lru_cache()
     def issue(self):
@@ -233,22 +267,23 @@ class Backend(BaseBackend, GithubSession):
 
         return self.request('get', full_url).json()
 
-    @property
-    def prefix(self):
+    def get_prefix(self, changetype=None):
         """
         Returns the issues changetype label
+
+        Args:
+            changetype (str): optional changetype to use, otherwise, get it from the issue
         """
-        changetype = None
+        if not changetype:
+            labels = self.issue['labels']
+            for label in labels:
+                label_name = label['name']
+                if label_name.startswith('changetype:'):
+                    changetype = label_name
 
-        labels = self.issue['labels']
-        for label in labels:
-            label_name = label['name']
-            if label_name.startswith('changetype:'):
-                changetype = label_name
-
-                break
-        else:
-            raise PrefixError('prefix not found for issue_number={}'.format(self.issue_number))
+                    break
+            else:
+                raise PrefixError('prefix not found for issue_number={}'.format(self.issue_number))
 
         return changetype.split(':', 1)[-1]
 
