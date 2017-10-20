@@ -20,6 +20,7 @@ ISSUE_LABELS_ENDPOINT = '/repos/{owner}/{repo}/issues/{number}/labels'
 
 PROJECTS_ENDPOINT = '/orgs/{org}/projects'
 
+REPO_LABELS_ENDPOINT = '/repos/{owner}/{repo}/labels'
 
 SEARCH_ISSUE_ENDPOINT = '/search/issues'
 
@@ -179,6 +180,18 @@ class GithubSession(object):
         full_url = f'{ISSUE_BACKEND_URL}{endpoint}'.format(**format_args)
 
         return full_url
+
+    def get_labels(self):
+        """
+        Returns all the labels for ISSUE_BACKEND_REPO
+        """
+        url = self.get_full_url(
+            REPO_LABELS_ENDPOINT,
+            owner=ISSUE_BACKEND_USER,
+            repo=ISSUE_BACKEND_REPO
+        )
+
+        return self.request('get', url).json()
 
     def get_project(self, name):
         projects = self.projects
