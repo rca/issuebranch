@@ -165,10 +165,14 @@ class GithubSession(object):
         else:
             raise CommandError(f'Unable to find project={args.project}')
 
-    def move_card(self, card, column):
+    def move_card(self, card, column, position=None):
+        position = (position or 'top')
+        if position not in ('bottom', 'top'):
+            raise CardError('position must be \'bottom\' or \'top\'')
+
         full_url = self.get_full_url(CARD_MOVE_ENDPOINT, id=card['id'])
         data = {
-          'position': 'top',
+          'position': position,
           'column_id': column['id'],
         }
 
