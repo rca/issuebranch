@@ -16,6 +16,7 @@ ISSUE_BACKEND_URL = 'https://api.github.com'
 ISSUE_BACKEND_USER = os.environ['ISSUE_BACKEND_USER']
 
 ISSUE_BACKEND_ENDPOINT = '/repos/{}/{}/issues/{{issue}}'.format(ISSUE_BACKEND_USER, ISSUE_BACKEND_REPO)
+ISSUE_LABELS_ENDPOINT = '/repos/{owner}/{repo}/issues/{number}/labels'
 
 PROJECTS_ENDPOINT = '/orgs/{org}/projects'
 
@@ -81,6 +82,26 @@ class GithubLinkHeader(object):
         return links
 
 class GithubSession(object):
+    # alias exceptions to make it easy to get without additional imports
+    PrefixError = PrefixError
+
+    def add_label(self, label):
+        """
+        Adds a label to the current issue
+        """
+        url = self.get_full_url(
+            ISSUE_LABELS_ENDPOINT,
+            owner=ISSUE_BACKEND_USER,
+            repo=ISSUE_BACKEND_REPO,
+            number=self.issue_number
+        )
+
+        data = [
+            label['name'],
+        ]
+
+        return self.request('post', url, json=data)
+
     def create_card(self, column):
         url = self.get_full_url(CARD_CREATE_ENDPOINT, column_id=column['id'])
         data = {
