@@ -13,7 +13,7 @@ import sys
 
 from slugify import slugify
 
-from issuebranch.backends.github import Search
+from issuebranch.backends.github import GithubSession
 
 DEFAULT_BASE_BRANCH = 'origin/master'
 MAX_SLUG_LENGTH = 32
@@ -116,9 +116,9 @@ def issue_icebox():
 
     args = parser.parse_args()
 
-    search = Search()
+    session = GithubSession()
 
-    results = search.results('repo:openslate/openslate is:issue is:open no:project')
+    results = session.search('repo:openslate/openslate is:issue is:open no:project')
 
     # print(json.dumps(results, indent=4))
 

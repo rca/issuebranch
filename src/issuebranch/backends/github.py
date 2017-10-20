@@ -42,7 +42,7 @@ def lru_cache():
     return decorator
 
 
-class GithubSessionMixin(object):
+class GithubSession(object):
     def create_card(self, column):
         url = self.get_full_url(CARD_CREATE_ENDPOINT, column_id=column['id'])
         data = {
@@ -138,6 +138,19 @@ class GithubSessionMixin(object):
 
         return response
 
+    @lru_cache()
+    def search(self, q):
+        """
+        Args:
+            q (str): a github api search query
+        """
+        url = self.get_full_url(SEARCH_ISSUE_ENDPOINT)
+        params = {
+            'q': q,
+        }
+
+        return self.request('get', url, params=params).json()
+
     @property
     @lru_cache()
     def session(self):
@@ -151,7 +164,7 @@ class GithubSessionMixin(object):
         return s
 
 
-class Backend(BaseBackend, GithubSessionMixin):
+class Backend(BaseBackend, GithubSession):
     CardError = CardError
 
     @property
@@ -183,18 +196,3 @@ class Backend(BaseBackend, GithubSessionMixin):
     @property
     def subject(self):
         return self.issue['title']
-
-
-class Search(GithubSessionMixin):
-    @lru_cache()
-    def results(self, q):
-        """
-        Args:
-            q (str): a github api search query
-        """
-        url = self.get_full_url(SEARCH_ISSUE_ENDPOINT)
-        params = {
-            'q': q,
-        }
-
-        return self.request('get', url, params=params).json()
