@@ -86,6 +86,47 @@ def issue_branch():
     make_branch(slug, base)
 
 
+def issue_closed():
+    """
+    Finds issues that are closed in all project columns (except `done`)
+    """
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('project', help='the project name')
+    parser.add_argument('--column', default='done', help='the column closed issues should go to, default `done`')
+
+    args = parser.parse_args()
+
+    column = args.column.lower()
+
+    session = GithubSession()
+
+    project = session.get_project(args.project)
+
+    for column_data in session.get_columns(project):
+        column_name = column_data['name'].lower()
+        if column_name == column:
+            continue
+
+        print(f'looking at column {column_name}')
+
+        # print(json.dumps(column_data, indent=4))
+
+        for card in session.get_cards(column_data):
+            # print(json.dumps(card, indent=4))
+
+            issue_data = session.request('get', card['content_url']).json()
+
+            if issue_data['state'] != 'closed':
+                continue
+
+            issue_number = issue_data['number']
+
+            print(f'moving issue {issue_number} to {column}')
+
+            issue_column(['issue_column', args.project, issue_number, column, '--position=bottom'])
+
+
 def issue_column(argv=None):
     parser = argparse.ArgumentParser()
 
