@@ -112,6 +112,9 @@ def issue_column():
     else:
         raise CommandError(f'Unable to find column={args.column}')
 
-    card = issue.get_card(project)
-
-    issue.move_card(card, column)
+    try:
+        card = issue.get_card(project)
+    except issue.CardError:
+        issue.create_card(column)
+    else:
+        issue.move_card(card, column)

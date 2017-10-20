@@ -15,7 +15,9 @@ ISSUE_BACKEND_USER = os.environ['ISSUE_BACKEND_USER']
 ISSUE_BACKEND_ENDPOINT = '/repos/{}/{}/issues/{{issue}}'.format(ISSUE_BACKEND_USER, ISSUE_BACKEND_REPO)
 
 PROJECTS_ENDPOINT = '/orgs/{org}/projects'
-MOVE_CARD_ENDPOINT = '/projects/columns/cards/{id}/moves'
+
+CARD_CREATE_ENDPOINT = '/projects/columns/{column_id}/cards'
+CARD_MOVE_ENDPOINT = '/projects/columns/cards/{id}/moves'
 
 
 class CardError(Exception):
@@ -39,11 +41,22 @@ def lru_cache():
 
 
 class Backend(BaseBackend):
+    CardError = CardError
+
+    def create_card(self, column):
+        url = self.get_full_url(CARD_CREATE_ENDPOINT, column_id=column['id'])
+        data = {
+            'content_id': self.issue['id'],
+            'content_type': 'Issue',
+        }
+
+        return self.request('post', url, json=data)
+
     @lru_cache()
     def get_card(self, project):
-        '''
+        """
         Returns the card for this issue within the project
-        '''
+        """
         issue_data = self.issue
         issue_url = issue_data['url']
 
@@ -81,7 +94,7 @@ class Backend(BaseBackend):
         return full_url
 
     def move_card(self, card, column):
-        full_url = self.get_full_url(MOVE_CARD_ENDPOINT, id=card['id'])
+        full_url = self.get_full_url(CARD_MOVE_ENDPOINT, id=card['id'])
         data = {
           'position': 'top',
           'column_id': column['id'],
