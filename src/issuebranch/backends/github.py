@@ -7,6 +7,9 @@ from functools import lru_cache as lru_cache_base, wraps
 from . import BaseBackend
 from ..exceptions import PrefixError
 
+CARD_CREATE_ENDPOINT = '/projects/columns/{column_id}/cards'
+CARD_MOVE_ENDPOINT = '/projects/columns/cards/{id}/moves'
+
 ISSUE_BACKEND_API_KEY = os.environ['ISSUE_BACKEND_API_KEY']
 ISSUE_BACKEND_REPO = os.environ['ISSUE_BACKEND_REPO']
 ISSUE_BACKEND_URL = 'https://api.github.com'
@@ -16,8 +19,6 @@ ISSUE_BACKEND_ENDPOINT = '/repos/{}/{}/issues/{{issue}}'.format(ISSUE_BACKEND_US
 
 PROJECTS_ENDPOINT = '/orgs/{org}/projects'
 
-CARD_CREATE_ENDPOINT = '/projects/columns/{column_id}/cards'
-CARD_MOVE_ENDPOINT = '/projects/columns/cards/{id}/moves'
 
 SEARCH_ISSUE_ENDPOINT = '/search/issues'
 
