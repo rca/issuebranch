@@ -42,7 +42,44 @@ def lru_cache():
     return decorator
 
 
-class GithubSessionMixin(object):
+class GithubLinkHeader(object):
+    def __init__(self, **kwargs):
+        self.url = None
+        self.rel = None
+
+        for k, v in kwargs.items():
+            if k not in self.__dict__:
+                raise AttributeError(f'{k} is not in {self.__class__}')
+
+            setattr(self, k, v)
+        pass
+
+    @staticmethod
+    def parse(link_header):
+        """
+        Returns a list of GithubLinkHeader objects
+        """
+        links = []
+
+        for item in link_header.split(','):
+            item = item.strip()
+
+            attrs = {}
+
+            for token in item.split(';'):
+                token = token.strip()
+
+                if token.startswith('<'):
+                    attrs['url'] = token[1:-1]
+                else:
+                    _t = [x.strip() for x in token.split('=', 1)]
+                    attrs[_t[0]] = json.loads(_t[1])
+
+            links.append(GithubLinkHeader(**attrs))
+
+        return links
+
+class GithubSession(object):
     def create_card(self, column):
         url = self.get_full_url(CARD_CREATE_ENDPOINT, column_id=column['id'])
         data = {
@@ -72,9 +109,27 @@ class GithubSessionMixin(object):
 
     @lru_cache()
     def get_cards(self, column):
-        cards_url = column['cards_url']
+        """
+        Iterates through all the cards in a column_data
 
-        return self.request('get', cards_url).json()
+        This method checks the response headers for the "Link" header
+        which provides pagination urls to get the next batch of cards
+        """
+        cards_url = column['cards_url']
+        while cards_url:
+            response = self.request('get', cards_url)
+
+            for item in response.json():
+                yield item
+
+            cards_url = None
+            link_header = response.headers.get('Link')
+            if link_header:
+                links = GithubLinkHeader.parse(link_header)
+                for link in links:
+                    if link.rel == 'next':
+                        cards_url = link.url
+                        break
 
     @lru_cache()
     def get_column(self, project, name):
@@ -110,10 +165,14 @@ class GithubSessionMixin(object):
         else:
             raise CommandError(f'Unable to find project={args.project}')
 
-    def move_card(self, card, column):
+    def move_card(self, card, column, position=None):
+        position = (position or 'top')
+        if position not in ('bottom', 'top'):
+            raise CardError('position must be \'bottom\' or \'top\'')
+
         full_url = self.get_full_url(CARD_MOVE_ENDPOINT, id=card['id'])
         data = {
-          'position': 'top',
+          'position': position,
           'column_id': column['id'],
         }
 
@@ -138,6 +197,19 @@ class GithubSessionMixin(object):
 
         return response
 
+    @lru_cache()
+    def search(self, q):
+        """
+        Args:
+            q (str): a github api search query
+        """
+        url = self.get_full_url(SEARCH_ISSUE_ENDPOINT)
+        params = {
+            'q': q,
+        }
+
+        return self.request('get', url, params=params).json()
+
     @property
     @lru_cache()
     def session(self):
@@ -151,7 +223,7 @@ class GithubSessionMixin(object):
         return s
 
 
-class Backend(BaseBackend, GithubSessionMixin):
+class Backend(BaseBackend, GithubSession):
     CardError = CardError
 
     @property
@@ -163,6 +235,9 @@ class Backend(BaseBackend, GithubSessionMixin):
 
     @property
     def prefix(self):
+        """
+        Returns the issues changetype label
+        """
         changetype = None
 
         labels = self.issue['labels']
@@ -180,18 +255,3 @@ class Backend(BaseBackend, GithubSessionMixin):
     @property
     def subject(self):
         return self.issue['title']
-
-
-class Search(GithubSessionMixin):
-    @lru_cache()
-    def results(self, q):
-        """
-        Args:
-            q (str): a github api search query
-        """
-        url = self.get_full_url(SEARCH_ISSUE_ENDPOINT)
-        params = {
-            'q': q,
-        }
-
-        return self.request('get', url, params=params).json()

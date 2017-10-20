@@ -13,7 +13,7 @@ import sys
 
 from slugify import slugify
 
-from issuebranch.backends.github import Search
+from issuebranch.backends.github import GithubSession
 
 DEFAULT_BASE_BRANCH = 'origin/master'
 MAX_SLUG_LENGTH = 32
@@ -86,14 +86,61 @@ def issue_branch():
     make_branch(slug, base)
 
 
-def issue_column():
+def issue_closed():
+    """
+    Finds issues that are closed in all project columns (except `done`)
+    """
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('project', help='the project name')
+    parser.add_argument('--column', default='done', help='the column closed issues should go to, default `done`')
+
+    args = parser.parse_args()
+
+    column = args.column.lower()
+
+    session = GithubSession()
+
+    project = session.get_project(args.project)
+
+    for column_data in session.get_columns(project):
+        column_name = column_data['name'].lower()
+        if column_name == column:
+            continue
+
+        print(f'looking at column {column_name}')
+
+        # print(json.dumps(column_data, indent=4))
+
+        for card in session.get_cards(column_data):
+            # print(json.dumps(card, indent=4))
+
+            issue_data = session.request('get', card['content_url']).json()
+
+            if issue_data['state'] != 'closed':
+                continue
+
+            issue_number = issue_data['number']
+
+            print(f'moving issue {issue_number} to {column}')
+
+            issue_column(['issue_column', args.project, issue_number, column, '--position=bottom'])
+
+
+def issue_column(argv=None):
     parser = argparse.ArgumentParser()
 
     parser.add_argument('project', help='the project name')
     parser.add_argument('issue_number', type=int, help='the issue tracker\'s issue number')
     parser.add_argument('column', help='the name of the column to move the issue to')
+    parser.add_argument('--position', help='location of the card; can be \'top\' or \'bottom\'')
 
-    args = parser.parse_args()
+    if argv:
+        argv = [str(x) for x in argv]
+    else:
+        argv = sys.argv
+
+    args = parser.parse_args(argv[1:])
 
     issue = get_issue(args.issue_number)
     issue_data = issue.issue
@@ -106,7 +153,7 @@ def issue_column():
     except issue.CardError:
         issue.create_card(column)
     else:
-        issue.move_card(card, column)
+        issue.move_card(card, column, position=args.position)
 
 
 def issue_icebox():
@@ -116,9 +163,9 @@ def issue_icebox():
 
     args = parser.parse_args()
 
-    search = Search()
+    session = GithubSession()
 
-    results = search.results('repo:openslate/openslate is:issue is:open no:project')
+    results = session.search('repo:openslate/openslate is:issue is:open no:project')
 
     # print(json.dumps(results, indent=4))
 
