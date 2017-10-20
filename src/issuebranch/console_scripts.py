@@ -133,3 +133,16 @@ def issue_icebox():
         except Exception as exc:
             print(json.dumps(issue_data, indent=4))
             print(f'Error: unable to process issue exc={exc}')
+
+
+def issue_show():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('issue_number', type=int, help='the issue tracker\'s issue number')
+
+    args = parser.parse_args()
+
+    issue = get_issue(args.issue_number)
+    issue_data = issue.issue
+
+    print(json.dumps(issue_data, indent=4))
