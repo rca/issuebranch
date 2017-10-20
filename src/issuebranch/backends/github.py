@@ -42,6 +42,43 @@ def lru_cache():
     return decorator
 
 
+class GithubLinkHeader(object):
+    def __init__(self, **kwargs):
+        self.url = None
+        self.rel = None
+
+        for k, v in kwargs.items():
+            if k not in self.__dict__:
+                raise AttributeError(f'{k} is not in {self.__class__}')
+
+            setattr(self, k, v)
+        pass
+
+    @staticmethod
+    def parse(link_header):
+        """
+        Returns a list of GithubLinkHeader objects
+        """
+        links = []
+
+        for item in link_header.split(','):
+            item = item.strip()
+
+            attrs = {}
+
+            for token in item.split(';'):
+                token = token.strip()
+
+                if token.startswith('<'):
+                    attrs['url'] = token[1:-1]
+                else:
+                    _t = [x.strip() for x in token.split('=', 1)]
+                    attrs[_t[0]] = json.loads(_t[1])
+
+            links.append(GithubLinkHeader(**attrs))
+
+        return links
+
 class GithubSession(object):
     def create_card(self, column):
         url = self.get_full_url(CARD_CREATE_ENDPOINT, column_id=column['id'])
