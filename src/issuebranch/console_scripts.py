@@ -92,6 +92,7 @@ def issue_column(argv=None):
     parser.add_argument('project', help='the project name')
     parser.add_argument('issue_number', type=int, help='the issue tracker\'s issue number')
     parser.add_argument('column', help='the name of the column to move the issue to')
+    parser.add_argument('--position', help='location of the card; can be \'top\' or \'bottom\'')
 
     if argv:
         argv = [str(x) for x in argv]
@@ -111,7 +112,7 @@ def issue_column(argv=None):
     except issue.CardError:
         issue.create_card(column)
     else:
-        issue.move_card(card, column)
+        issue.move_card(card, column, position=args.position)
 
 
 def issue_icebox():
