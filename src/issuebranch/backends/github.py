@@ -83,6 +83,7 @@ class GithubLinkHeader(object):
 
 class GithubSession(object):
     # alias exceptions to make it easy to get without additional imports
+    CardError = CardError
     PrefixError = PrefixError
 
     def add_label(self, label):
@@ -246,8 +247,6 @@ class GithubSession(object):
 
 
 class Backend(BaseBackend, GithubSession):
-    CardError = CardError
-
     @property
     @lru_cache()
     def issue(self):
