@@ -75,7 +75,21 @@ def issue_branch():
 
     prefix = args.prefix
     if not prefix:
-        prefix = issue.get_prefix()
+        try:
+            prefix = issue.get_prefix()
+        except issue.PrefixError:
+            changetypes = sorted([x for x in issue.get_labels() if x['name'].startswith('changetype:')], key=lambda x: x['name'])
+            print('no changetype found; select which one to use:')
+
+            for idx, _changetype in enumerate(changetypes):
+                print(f'{idx}: {_changetype["name"]}')
+
+            index_number = int(input('enter index number: '))
+            changetype = changetypes[index_number]
+
+            issue.add_label(changetype)
+
+            prefix = issue.get_prefix(changetype=changetype['name'])
 
     subject = args.subject
     if not subject:
