@@ -19,6 +19,8 @@ PROJECTS_ENDPOINT = '/orgs/{org}/projects'
 CARD_CREATE_ENDPOINT = '/projects/columns/{column_id}/cards'
 CARD_MOVE_ENDPOINT = '/projects/columns/cards/{id}/moves'
 
+SEARCH_ISSUE_ENDPOINT = '/search/issues'
+
 
 class CardError(Exception):
     pass
@@ -40,9 +42,7 @@ def lru_cache():
     return decorator
 
 
-class Backend(BaseBackend):
-    CardError = CardError
-
+class GithubSessionMixin(object):
     def create_card(self, column):
         url = self.get_full_url(CARD_CREATE_ENDPOINT, column_id=column['id'])
         data = {
@@ -77,6 +77,15 @@ class Backend(BaseBackend):
         return self.request('get', cards_url).json()
 
     @lru_cache()
+    def get_column(self, project, name):
+        columns = self.get_columns(project)
+        for column in columns:
+            if column['name'].lower() == name:
+                return column
+        else:
+            raise CommandError(f'Unable to find column={args.column}')
+
+    @lru_cache()
     def get_columns(self, project):
         '''
         Returns the columns in the given project
@@ -93,6 +102,14 @@ class Backend(BaseBackend):
 
         return full_url
 
+    def get_project(self, name):
+        projects = self.projects
+        for project in projects:
+            if project['name'].lower() == name:
+                return project
+        else:
+            raise CommandError(f'Unable to find project={args.project}')
+
     def move_card(self, card, column):
         full_url = self.get_full_url(CARD_MOVE_ENDPOINT, id=card['id'])
         data = {
@@ -105,6 +122,13 @@ class Backend(BaseBackend):
         except Exception as exc:
             import pdb; pdb.set_trace()
             print(exc)
+
+    @property
+    @lru_cache()
+    def projects(self):
+        full_url = self.get_full_url(PROJECTS_ENDPOINT, org=ISSUE_BACKEND_REPO)
+
+        return self.request('get', full_url).json()
 
     def request(self, method, *args, **kwargs):
         method_fn = getattr(self.session, method)
@@ -125,6 +149,10 @@ class Backend(BaseBackend):
         })
 
         return s
+
+
+class Backend(BaseBackend, GithubSessionMixin):
+    CardError = CardError
 
     @property
     @lru_cache()
@@ -150,12 +178,20 @@ class Backend(BaseBackend):
         return changetype.split(':', 1)[-1]
 
     @property
-    @lru_cache()
-    def projects(self):
-        full_url = self.get_full_url(PROJECTS_ENDPOINT, org=ISSUE_BACKEND_REPO)
-
-        return self.request('get', full_url).json()
-
-    @property
     def subject(self):
         return self.issue['title']
+
+
+class Search(GithubSessionMixin):
+    @lru_cache()
+    def results(self, q):
+        """
+        Args:
+            q (str): a github api search query
+        """
+        url = self.get_full_url(SEARCH_ISSUE_ENDPOINT)
+        params = {
+            'q': q,
+        }
+
+        return self.request('get', url, params=params).json()

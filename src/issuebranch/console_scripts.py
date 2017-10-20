@@ -13,6 +13,8 @@ import sys
 
 from slugify import slugify
 
+from issuebranch.backends.github import Search
+
 DEFAULT_BASE_BRANCH = 'origin/master'
 MAX_SLUG_LENGTH = 32
 
@@ -96,21 +98,8 @@ def issue_column():
     issue = get_issue(args.issue_number)
     issue_data = issue.issue
 
-    project = None
-    projects = issue.projects
-    for project in projects:
-        if project['name'].lower() == args.project:
-            break
-    else:
-        raise CommandError(f'Unable to find project={args.project}')
-
-    column = None
-    columns = issue.get_columns(project)
-    for column in columns:
-        if column['name'].lower() == args.column:
-            break
-    else:
-        raise CommandError(f'Unable to find column={args.column}')
+    project = issue.get_project(args.project)
+    column = issue.get_column(project, args.column)
 
     try:
         card = issue.get_card(project)
@@ -118,3 +107,29 @@ def issue_column():
         issue.create_card(column)
     else:
         issue.move_card(card, column)
+
+
+def issue_icebox():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('project', help='the project name')
+
+    args = parser.parse_args()
+
+    search = Search()
+
+    results = search.results('repo:openslate/openslate is:issue is:open no:project')
+
+    # print(json.dumps(results, indent=4))
+
+    for issue_data in results['items']:
+        issue = get_issue(issue_data['number'])
+
+        project = issue.get_project(args.project)
+        column = issue.get_column(project, 'icebox')
+
+        try:
+            issue.create_card(column)
+        except Exception as exc:
+            print(json.dumps(issue_data, indent=4))
+            print(f'Error: unable to process issue exc={exc}')

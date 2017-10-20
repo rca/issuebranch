@@ -16,6 +16,7 @@ setup(
         'console_scripts': [
             'issue-branch = issuebranch.console_scripts:issue_branch',
             'issue-column = issuebranch.console_scripts:issue_column',
+            'issue-icebox = issuebranch.console_scripts:issue_icebox',
         ],
     },
     install_requires=[
