@@ -109,9 +109,27 @@ class GithubSession(object):
 
     @lru_cache()
     def get_cards(self, column):
-        cards_url = column['cards_url']
+        """
+        Iterates through all the cards in a column_data
 
-        return self.request('get', cards_url).json()
+        This method checks the response headers for the "Link" header
+        which provides pagination urls to get the next batch of cards
+        """
+        cards_url = column['cards_url']
+        while cards_url:
+            response = self.request('get', cards_url)
+
+            for item in response.json():
+                yield item
+
+            cards_url = None
+            link_header = response.headers.get('Link')
+            if link_header:
+                links = GithubLinkHeader.parse(link_header)
+                for link in links:
+                    if link.rel == 'next':
+                        cards_url = link.url
+                        break
 
     @lru_cache()
     def get_column(self, project, name):
