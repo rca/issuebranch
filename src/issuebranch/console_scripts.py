@@ -21,6 +21,21 @@ MAX_SLUG_LENGTH = 32
 SUBJECT_EXCLUDE_RE = re.compile(r'[/]')
 
 
+class Unbuffered(object):
+   def __init__(self, stream):
+       self.stream = stream
+   def write(self, data):
+       self.stream.write(data)
+       self.stream.flush()
+   def writelines(self, datas):
+       self.stream.writelines(datas)
+       self.stream.flush()
+   def __getattr__(self, attr):
+       return getattr(self.stream, attr)
+
+sys.stdout = Unbuffered(sys.stdout)
+
+
 class CommandError(Exception):
     pass
 
@@ -108,7 +123,7 @@ def issue_closed():
         if column_name == column:
             continue
 
-        print(f'looking at column {column_name}')
+        print(f'\nlooking at column {column_name}')
 
         # print(json.dumps(column_data, indent=4))
 
@@ -118,11 +133,13 @@ def issue_closed():
             issue_data = session.request('get', card['content_url']).json()
 
             if issue_data['state'] != 'closed':
+                print('.', end='')
+
                 continue
 
             issue_number = issue_data['number']
 
-            print(f'moving issue {issue_number} to {column}')
+            print(f'\nmoving issue {issue_number} to {column}')
 
             issue_column(['issue_column', args.project, issue_number, column, '--position=bottom'])
 
