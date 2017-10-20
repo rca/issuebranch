@@ -86,14 +86,19 @@ def issue_branch():
     make_branch(slug, base)
 
 
-def issue_column():
+def issue_column(argv=None):
     parser = argparse.ArgumentParser()
 
     parser.add_argument('project', help='the project name')
     parser.add_argument('issue_number', type=int, help='the issue tracker\'s issue number')
     parser.add_argument('column', help='the name of the column to move the issue to')
 
-    args = parser.parse_args()
+    if argv:
+        argv = [str(x) for x in argv]
+    else:
+        argv = sys.argv
+
+    args = parser.parse_args(argv[1:])
 
     issue = get_issue(args.issue_number)
     issue_data = issue.issue
