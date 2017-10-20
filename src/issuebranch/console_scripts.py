@@ -75,7 +75,7 @@ def issue_branch():
 
     prefix = args.prefix
     if not prefix:
-        prefix = issue.prefix
+        prefix = issue.get_prefix()
 
     subject = args.subject
     if not subject:

@@ -267,22 +267,23 @@ class Backend(BaseBackend, GithubSession):
 
         return self.request('get', full_url).json()
 
-    @property
-    def prefix(self):
+    def get_prefix(self, changetype=None):
         """
         Returns the issues changetype label
+
+        Args:
+            changetype (str): optional changetype to use, otherwise, get it from the issue
         """
-        changetype = None
+        if not changetype:
+            labels = self.issue['labels']
+            for label in labels:
+                label_name = label['name']
+                if label_name.startswith('changetype:'):
+                    changetype = label_name
 
-        labels = self.issue['labels']
-        for label in labels:
-            label_name = label['name']
-            if label_name.startswith('changetype:'):
-                changetype = label_name
-
-                break
-        else:
-            raise PrefixError('prefix not found for issue_number={}'.format(self.issue_number))
+                    break
+            else:
+                raise PrefixError('prefix not found for issue_number={}'.format(self.issue_number))
 
         return changetype.split(':', 1)[-1]
 
