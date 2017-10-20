@@ -14,7 +14,8 @@ setup(
     packages=['issuebranch','issuebranch.backends'],
     entry_points={
         'console_scripts': [
-            'issue-branch = issuebranch.console_scripts:issuebranch',
+            'issue-branch = issuebranch.console_scripts:issue_branch',
+            'issue-column = issuebranch.console_scripts:issue_column',
         ],
     },
     install_requires=[
