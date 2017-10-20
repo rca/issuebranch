@@ -163,6 +163,9 @@ class Backend(BaseBackend, GithubSessionMixin):
 
     @property
     def prefix(self):
+        """
+        Returns the issues changetype label
+        """
         changetype = None
 
         labels = self.issue['labels']
