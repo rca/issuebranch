@@ -140,20 +140,9 @@ class GithubSession(object):
         which provides pagination urls to get the next batch of cards
         """
         cards_url = column['cards_url']
-        while cards_url:
-            response = self.request('get', cards_url)
-
+        for response in self.get_paginated(cards_url):
             for item in response.json():
                 yield item
-
-            cards_url = None
-            link_header = response.headers.get('Link')
-            if link_header:
-                links = GithubLinkHeader.parse(link_header)
-                for link in links:
-                    if link.rel == 'next':
-                        cards_url = link.url
-                        break
 
     @lru_cache()
     def get_column(self, project, name):
@@ -192,6 +181,21 @@ class GithubSession(object):
         )
 
         return self.request('get', url).json()
+
+    def get_paginated(self, url):
+        while url:
+            response = self.request('get', url)
+
+            yield response
+
+            url = None
+            link_header = response.headers.get('Link')
+            if link_header:
+                links = GithubLinkHeader.parse(link_header)
+                for link in links:
+                    if link.rel == 'next':
+                        url = link.url
+                        break
 
     def get_project(self, name):
         projects = self.projects
