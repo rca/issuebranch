@@ -105,8 +105,8 @@ class GithubSession(object):
 
         return self.request('post', url, json=data)
 
-    def create_card(self, column):
-        url = self.get_full_url(CARD_CREATE_ENDPOINT, column_id=column['id'])
+    def create_card(self, column_data):
+        url = self.get_full_url(CARD_CREATE_ENDPOINT, column_id=column_data['id'])
         data = {
             'content_id': self.issue['id'],
             'content_type': 'Issue',
@@ -159,14 +159,14 @@ class GithubSession(object):
             raise CardError(f'Unable to find card for issue {issue_url}')
 
     @lru_cache()
-    def get_cards(self, column):
+    def get_cards(self, column_data):
         """
         Iterates through all the cards in a column_data
 
         This method checks the response headers for the "Link" header
         which provides pagination urls to get the next batch of cards
         """
-        cards_url = column['cards_url']
+        cards_url = column_data['cards_url']
         for response in self.get_paginated(cards_url):
             for item in response.json():
                 yield item
