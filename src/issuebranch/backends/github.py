@@ -18,7 +18,7 @@ ISSUE_BACKEND_USER = os.environ['ISSUE_BACKEND_USER']
 ISSUE_BACKEND_ENDPOINT = '/repos/{}/{}/issues/{{issue}}'.format(ISSUE_BACKEND_USER, ISSUE_BACKEND_REPO)
 ISSUE_LABELS_ENDPOINT = '/repos/{owner}/{repo}/issues/{number}/labels'
 
-PROJECTS_ENDPOINT = '/orgs/{org}/projects'
+PROJECTS_ENDPOINT = '/orgs/{owner}/projects'
 
 REPO_LABELS_ENDPOINT = '/repos/{owner}/{repo}/labels'
 
@@ -221,7 +221,7 @@ class GithubSession(object):
     @property
     @lru_cache()
     def projects(self):
-        full_url = self.get_full_url(PROJECTS_ENDPOINT, org=ISSUE_BACKEND_REPO)
+        full_url = self.get_full_url(PROJECTS_ENDPOINT, owner=ISSUE_BACKEND_REPO)
 
         return self.request('get', full_url).json()
 
