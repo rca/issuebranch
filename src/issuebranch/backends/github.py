@@ -105,10 +105,10 @@ class GithubSession(object):
 
         return self.request('post', url, json=data)
 
-    def create_card(self, column_data):
+    def create_card(self, column_data, issue_data):
         url = self.get_full_url(CARD_CREATE_ENDPOINT, column_id=column_data['id'])
         data = {
-            'content_id': self.issue['id'],
+            'content_id': issue_data['id'],
             'content_type': 'Issue',
         }
 

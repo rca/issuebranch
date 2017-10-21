@@ -186,7 +186,7 @@ def issue_column(argv=None):
     try:
         card = issue.get_card(project, issue_data)
     except issue.CardError:
-        issue.create_card(column)
+        issue.create_card(column, issue_data)
     else:
         issue.move_card(card, column, position=args.position)
 
@@ -211,7 +211,7 @@ def issue_icebox():
         column = issue.get_column(project, 'icebox')
 
         try:
-            issue.create_card(column)
+            issue.create_card(column, issue_data)
         except Exception as exc:
             print(json.dumps(issue_data, indent=4))
             print(f'Error: unable to process issue exc={exc}')
