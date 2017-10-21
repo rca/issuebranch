@@ -284,8 +284,27 @@ def projects_clone(args):
 
     # go through all the columns in the old project and create them in the
     # new one if they don't already exist
-    for column in session.get_columns(project):
-        if column['name'] not in new_columns:
-            print(f'creating column {column["name"]}')
+    for column_data in session.get_columns(project):
+        column_name = column_data['name']
+        new_column_data = new_columns.get(column_name)
+        if not new_column_data:
+            print(f'creating column {column_name}')
 
-            session.create_column(new_project, column['name'])
+            new_column_data = session.create_column(new_project, column_name)
+
+        # print(new_column_data)
+
+        # get the new column's cards
+        new_cards = dict([(x['content_url'], x) for x in session.get_cards(new_column_data)])
+
+        # get the old column's cards
+        old_cards = reversed(list(session.get_cards(column_data)))
+
+        for old_card_data in old_cards:
+            old_content_url = old_card_data['content_url']
+
+            if old_content_url not in new_cards:
+                # get the issue number from the URL
+                issue_data = session.request('get', old_content_url).json()
+
+                new_card = session.create_card(new_column_data, issue_data)
