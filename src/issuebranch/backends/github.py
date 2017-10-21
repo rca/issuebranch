@@ -113,6 +113,21 @@ class GithubSession(object):
 
         return self.request('post', url, json=data)
 
+    def create_project(self, name, body):
+        url = self.get_full_url(
+            PROJECTS_ENDPOINT,
+            owner=ISSUE_BACKEND_USER
+        )
+
+        data = {
+          'name': name,
+          'body': body,
+        }
+
+        print(data)
+
+        return self.request('post', url, json=data).json()
+
     @lru_cache()
     def get_card(self, project, issue_data):
         """
