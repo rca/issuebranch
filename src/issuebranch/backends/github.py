@@ -2,6 +2,8 @@ import os
 import json
 import requests
 
+from requests.exceptions import HTTPError
+
 from functools import lru_cache as lru_cache_base, wraps
 
 from . import BaseBackend

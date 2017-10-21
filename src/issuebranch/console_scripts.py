@@ -13,7 +13,7 @@ import sys
 
 from slugify import slugify
 
-from issuebranch.backends.github import GithubSession
+from issuebranch.backends.github import GithubSession, HTTPError
 
 DEFAULT_BASE_BRANCH = 'origin/master'
 MAX_SLUG_LENGTH = 32
@@ -304,7 +304,11 @@ def projects_clone(args):
             old_content_url = old_card_data['content_url']
 
             if old_content_url not in new_cards:
-                # get the issue number from the URL
-                issue_data = session.request('get', old_content_url).json()
+                try:
+                    issue_data = session.request('get', old_content_url).json()
+                except HTTPError as exc:
+                    print(f'Warning: unable to create card {old_content_url} in {column_name}')
 
-                new_card = session.create_card(new_column_data, issue_data)
+                    continue
+                else:
+                    new_card = session.create_card(new_column_data, issue_data)
