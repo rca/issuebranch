@@ -300,6 +300,8 @@ def projects_clone(args):
         # get the old column's cards
         old_cards = reversed(list(session.get_cards(column_data)))
 
+        print(f'filling {column_name}')
+
         for old_card_data in old_cards:
             old_content_url = old_card_data['content_url']
 
