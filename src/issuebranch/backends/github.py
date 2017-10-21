@@ -189,8 +189,9 @@ class GithubSession(object):
             project (dict): the dictionary from the projects API requests
         '''
         columns_url = project['columns_url']
-
-        return self.request('get', columns_url).json()
+        for response in self.get_paginated(columns_url):
+            for item in response.json():
+                yield item
 
     def get_full_url(self, endpoint, **format_args):
         full_url = f'{ISSUE_BACKEND_URL}{endpoint}'.format(**format_args)
