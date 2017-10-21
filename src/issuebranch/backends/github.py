@@ -19,6 +19,7 @@ ISSUE_BACKEND_ENDPOINT = '/repos/{}/{}/issues/{{issue}}'.format(ISSUE_BACKEND_US
 ISSUE_LABELS_ENDPOINT = '/repos/{owner}/{repo}/issues/{number}/labels'
 
 PROJECTS_ENDPOINT = '/orgs/{owner}/projects'
+PROJECT_CREATE_COLUMN = '/projects/{project_id}/columns'
 
 REPO_LABELS_ENDPOINT = '/repos/{owner}/{repo}/labels'
 
@@ -112,6 +113,14 @@ class GithubSession(object):
         }
 
         return self.request('post', url, json=data)
+
+    def create_column(self, project, name):
+        url = self.get_full_url(PROJECT_CREATE_COLUMN, project_id=project['id'])
+        data = {
+            'name': name,
+        }
+
+        return self.request('post', url, json=data).json()
 
     def create_project(self, name, body):
         url = self.get_full_url(
