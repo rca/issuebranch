@@ -180,7 +180,7 @@ def issue_column(argv=None):
     column = issue.get_column(project, args.column)
 
     try:
-        card = issue.get_card(project)
+        card = issue.get_card(project, issue_data)
     except issue.CardError:
         issue.create_card(column)
     else:

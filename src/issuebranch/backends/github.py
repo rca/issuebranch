@@ -114,11 +114,14 @@ class GithubSession(object):
         return self.request('post', url, json=data)
 
     @lru_cache()
-    def get_card(self, project):
+    def get_card(self, project, issue_data):
         """
         Returns the card for this issue within the project
+
+        Args:
+            project (dict): the project data from the github api
+            issue_data (dict): issue data from the github api
         """
-        issue_data = self.issue
         issue_url = issue_data['url']
 
         # print('\n\nissue:')
