@@ -21,6 +21,10 @@ MAX_SLUG_LENGTH = 32
 SUBJECT_EXCLUDE_RE = re.compile(r'[/]')
 
 
+class ProjectError(Exception):
+    pass
+
+
 class Unbuffered(object):
    def __init__(self, stream):
        self.stream = stream
@@ -224,3 +228,64 @@ def issue_show():
     issue_data = issue.issue
 
     print(json.dumps(issue_data, indent=4))
+
+
+def projects():
+    parser = argparse.ArgumentParser()
+
+    # parser.add_argument('-g', '--global')
+
+    subcommands = parser.add_subparsers(dest="subcommand")
+
+    clone_parser = subcommands.add_parser('clone')
+    clone_parser.add_argument('name', help='name of the project to clone')
+    clone_parser.add_argument('new_name', help='name of the new project')
+
+    args = parser.parse_args()
+
+    command_fn_name = f'projects_{args.subcommand}'
+    command_fn = globals()[command_fn_name]
+
+    command_fn(args)
+
+def projects_clone(args):
+    session = GithubSession()
+
+    project = None
+    new_project = None
+
+    for _project in session.projects:
+        _name = _project['name'].lower()
+
+        if _name == args.name.lower():
+            project = _project
+        elif _name == args.new_name.lower():
+            new_project = _project
+
+        if project and new_project:
+            break
+
+    if not project:
+        raise ProjectError(f'unable to find project {args.name}')
+
+    # print(json.dumps(project, indent=4))
+    # print(json.dumps(new_project, indent=4))
+
+    # create the new project if it doesn't exist
+    if not new_project:
+        print(f'creating {args.new_name}')
+
+        session.create_project(args.new_name, project['body'])
+
+    # get the new project's columns and index them by name
+    new_columns = {}
+    for column in session.get_columns(new_project):
+        new_columns[column['name']] = column
+
+    # go through all the columns in the old project and create them in the
+    # new one if they don't already exist
+    for column in session.get_columns(project):
+        if column['name'] not in new_columns:
+            print(f'creating column {column["name"]}')
+
+            session.create_column(new_project, column['name'])
