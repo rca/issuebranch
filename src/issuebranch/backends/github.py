@@ -12,6 +12,9 @@ from ..exceptions import PrefixError
 CARD_CREATE_ENDPOINT = '/projects/columns/{column_id}/cards'
 CARD_MOVE_ENDPOINT = '/projects/columns/cards/{id}/moves'
 
+COLUMN_DELETE_ENDPOINT = '/projects/columns/{id}'
+COLUMN_MOVE_ENDPOINT = '/projects/columns/{id}/moves'
+
 ISSUE_BACKEND_API_KEY = os.environ['ISSUE_BACKEND_API_KEY']
 ISSUE_BACKEND_REPO = os.environ['ISSUE_BACKEND_REPO']
 ISSUE_BACKEND_URL = 'https://api.github.com'
@@ -139,6 +142,11 @@ class GithubSession(object):
 
         return self.request('post', url, json=data).json()
 
+    def delete_column(self, column_data):
+        url = self.get_full_url(COLUMN_DELETE_ENDPOINT, id=column_data['id'])
+
+        return self.request('delete', url)
+
     @lru_cache()
     def get_card(self, project, issue_data):
         """
@@ -251,6 +259,14 @@ class GithubSession(object):
         except Exception as exc:
             import pdb; pdb.set_trace()
             print(exc)
+
+    def move_column(self, column_data, position):
+        url = self.get_full_url(COLUMN_MOVE_ENDPOINT, id=column_data['id'])
+        data = {
+            'position': position,
+        }
+
+        return self.request('post', url, json=data)
 
     @property
     @lru_cache()
