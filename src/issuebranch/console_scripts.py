@@ -233,13 +233,18 @@ def issue_show():
 def projects():
     parser = argparse.ArgumentParser()
 
-    # parser.add_argument('-g', '--global')
+    parser.add_argument('name', help='name of the project to clone')
 
     subcommands = parser.add_subparsers(dest="subcommand")
 
     clone_parser = subcommands.add_parser('clone')
-    clone_parser.add_argument('name', help='name of the project to clone')
     clone_parser.add_argument('new_name', help='name of the new project')
+
+    columns_parser = subcommands.add_parser('columns')
+    columns_parser.add_argument('--action', action='store_const', const=projects_columns_print, default=projects_columns_print, help='print the columns')
+    columns_parser.add_argument('--clear', action='store_const', const=projects_columns_clear, dest='action', help='clear the column in the specified project')
+    columns_parser.add_argument('--verbose', '-v', action='store_true', help='show all json')
+    columns_parser.add_argument('column', nargs='?', help='name of the column to clear')
 
     args = parser.parse_args()
 
@@ -314,3 +319,69 @@ def projects_clone(args):
                     continue
                 else:
                     new_card = session.create_card(new_column_data, issue_data)
+
+def projects_columns(args):
+    session = GithubSession()
+
+    project_name = args.name.lower()
+
+    column_name = args.column
+    if column_name:
+        column_name = column_name.lower()
+
+    project = None
+    for _project in session.projects:
+        _name = _project['name'].lower()
+
+        if project_name == _name:
+            project = _project
+            break
+    else:
+        raise ProjectError('cannot find project {project_name}')
+
+    return args.action(args, session, column_name, project)
+
+def projects_columns_clear(args, session, column_name, project):
+    found_column = None
+    last_column = None
+    position = None
+
+    for _column in session.get_columns(project):
+        _column_name = _column['name'].lower()
+
+        if column_name and column_name == _column_name:
+            found_column = _column
+
+            if last_column:
+                position = f'after:{last_column["id"]}'
+            else:
+                position = 'first'
+
+            break
+
+        last_column = _column
+
+    print(f'clear, found_column={found_column}, position={position}')
+
+    if found_column:
+        session.delete_column(found_column)
+
+        column_name = found_column['name']
+
+    column_data = session.create_column(project, column_name)
+
+    if position:
+        session.move_column(column_data, position)
+
+
+def projects_columns_print(args, session, column_name, project):
+    for _column in session.get_columns(project):
+        _column_name = _column['name'].lower()
+
+        if column_name and column_name != _column_name:
+            continue
+
+        if args.verbose:
+            print(json.dumps(_column, indent=4))
+        else:
+            print(_column['name'])
