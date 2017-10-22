@@ -13,12 +13,16 @@ import sys
 
 from slugify import slugify
 
-from issuebranch.backends.github import GithubSession
+from issuebranch.backends.github import GithubSession, HTTPError
 
 DEFAULT_BASE_BRANCH = 'origin/master'
 MAX_SLUG_LENGTH = 32
 
 SUBJECT_EXCLUDE_RE = re.compile(r'[/]')
+
+
+class ProjectError(Exception):
+    pass
 
 
 class Unbuffered(object):
@@ -180,9 +184,9 @@ def issue_column(argv=None):
     column = issue.get_column(project, args.column)
 
     try:
-        card = issue.get_card(project)
+        card = issue.get_card(project, issue_data)
     except issue.CardError:
-        issue.create_card(column)
+        issue.create_card(column, issue_data)
     else:
         issue.move_card(card, column, position=args.position)
 
@@ -207,7 +211,7 @@ def issue_icebox():
         column = issue.get_column(project, 'icebox')
 
         try:
-            issue.create_card(column)
+            issue.create_card(column, issue_data)
         except Exception as exc:
             print(json.dumps(issue_data, indent=4))
             print(f'Error: unable to process issue exc={exc}')
@@ -224,3 +228,160 @@ def issue_show():
     issue_data = issue.issue
 
     print(json.dumps(issue_data, indent=4))
+
+
+def projects():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('name', help='name of the project to clone')
+
+    subcommands = parser.add_subparsers(dest="subcommand")
+
+    clone_parser = subcommands.add_parser('clone')
+    clone_parser.add_argument('new_name', help='name of the new project')
+
+    columns_parser = subcommands.add_parser('columns')
+    columns_parser.add_argument('--action', action='store_const', const=projects_columns_print, default=projects_columns_print, help='print the columns')
+    columns_parser.add_argument('--clear', action='store_const', const=projects_columns_clear, dest='action', help='clear the column in the specified project')
+    columns_parser.add_argument('--verbose', '-v', action='store_true', help='show all json')
+    columns_parser.add_argument('column', nargs='?', help='name of the column to clear')
+
+    args = parser.parse_args()
+
+    command_fn_name = f'projects_{args.subcommand}'
+    command_fn = globals()[command_fn_name]
+
+    command_fn(args)
+
+def projects_clone(args):
+    session = GithubSession()
+
+    project = None
+    new_project = None
+
+    for _project in session.projects:
+        _name = _project['name'].lower()
+
+        if _name == args.name.lower():
+            project = _project
+        elif _name == args.new_name.lower():
+            new_project = _project
+
+        if project and new_project:
+            break
+
+    if not project:
+        raise ProjectError(f'unable to find project {args.name}')
+
+    # print(json.dumps(project, indent=4))
+    # print(json.dumps(new_project, indent=4))
+
+    # create the new project if it doesn't exist
+    if not new_project:
+        print(f'creating {args.new_name}')
+
+        session.create_project(args.new_name, project['body'])
+
+    # get the new project's columns and index them by name
+    new_columns = {}
+    for column in session.get_columns(new_project):
+        new_columns[column['name']] = column
+
+    # go through all the columns in the old project and create them in the
+    # new one if they don't already exist
+    for column_data in session.get_columns(project):
+        column_name = column_data['name']
+        new_column_data = new_columns.get(column_name)
+        if not new_column_data:
+            print(f'creating column {column_name}')
+
+            new_column_data = session.create_column(new_project, column_name)
+
+        # print(new_column_data)
+
+        # get the new column's cards
+        new_cards = dict([(x['content_url'], x) for x in session.get_cards(new_column_data)])
+
+        # get the old column's cards
+        old_cards = reversed(list(session.get_cards(column_data)))
+
+        print(f'filling {column_name}')
+
+        for old_card_data in old_cards:
+            old_content_url = old_card_data['content_url']
+
+            if old_content_url not in new_cards:
+                try:
+                    issue_data = session.request('get', old_content_url).json()
+                except HTTPError as exc:
+                    print(f'Warning: unable to create card {old_content_url} in {column_name}')
+
+                    continue
+                else:
+                    new_card = session.create_card(new_column_data, issue_data)
+
+def projects_columns(args):
+    session = GithubSession()
+
+    project_name = args.name.lower()
+
+    column_name = args.column
+    if column_name:
+        column_name = column_name.lower()
+
+    project = None
+    for _project in session.projects:
+        _name = _project['name'].lower()
+
+        if project_name == _name:
+            project = _project
+            break
+    else:
+        raise ProjectError('cannot find project {project_name}')
+
+    return args.action(args, session, column_name, project)
+
+def projects_columns_clear(args, session, column_name, project):
+    found_column = None
+    last_column = None
+    position = None
+
+    for _column in session.get_columns(project):
+        _column_name = _column['name'].lower()
+
+        if column_name and column_name == _column_name:
+            found_column = _column
+
+            if last_column:
+                position = f'after:{last_column["id"]}'
+            else:
+                position = 'first'
+
+            break
+
+        last_column = _column
+
+    print(f'clear, found_column={found_column}, position={position}')
+
+    if found_column:
+        session.delete_column(found_column)
+
+        column_name = found_column['name']
+
+    column_data = session.create_column(project, column_name)
+
+    if position:
+        session.move_column(column_data, position)
+
+
+def projects_columns_print(args, session, column_name, project):
+    for _column in session.get_columns(project):
+        _column_name = _column['name'].lower()
+
+        if column_name and column_name != _column_name:
+            continue
+
+        if args.verbose:
+            print(json.dumps(_column, indent=4))
+        else:
+            print(_column['name'])

@@ -2,6 +2,8 @@ import os
 import json
 import requests
 
+from requests.exceptions import HTTPError
+
 from functools import lru_cache as lru_cache_base, wraps
 
 from . import BaseBackend
@@ -9,6 +11,9 @@ from ..exceptions import PrefixError
 
 CARD_CREATE_ENDPOINT = '/projects/columns/{column_id}/cards'
 CARD_MOVE_ENDPOINT = '/projects/columns/cards/{id}/moves'
+
+COLUMN_DELETE_ENDPOINT = '/projects/columns/{id}'
+COLUMN_MOVE_ENDPOINT = '/projects/columns/{id}/moves'
 
 ISSUE_BACKEND_API_KEY = os.environ['ISSUE_BACKEND_API_KEY']
 ISSUE_BACKEND_REPO = os.environ['ISSUE_BACKEND_REPO']
@@ -18,7 +23,8 @@ ISSUE_BACKEND_USER = os.environ['ISSUE_BACKEND_USER']
 ISSUE_BACKEND_ENDPOINT = '/repos/{}/{}/issues/{{issue}}'.format(ISSUE_BACKEND_USER, ISSUE_BACKEND_REPO)
 ISSUE_LABELS_ENDPOINT = '/repos/{owner}/{repo}/issues/{number}/labels'
 
-PROJECTS_ENDPOINT = '/orgs/{org}/projects'
+PROJECTS_ENDPOINT = '/orgs/{owner}/projects'
+PROJECT_CREATE_COLUMN = '/projects/{project_id}/columns'
 
 REPO_LABELS_ENDPOINT = '/repos/{owner}/{repo}/labels'
 
@@ -104,21 +110,52 @@ class GithubSession(object):
 
         return self.request('post', url, json=data)
 
-    def create_card(self, column):
-        url = self.get_full_url(CARD_CREATE_ENDPOINT, column_id=column['id'])
+    def create_card(self, column_data, issue_data):
+        url = self.get_full_url(CARD_CREATE_ENDPOINT, column_id=column_data['id'])
         data = {
-            'content_id': self.issue['id'],
+            'content_id': issue_data['id'],
             'content_type': 'Issue',
         }
 
         return self.request('post', url, json=data)
 
+    def create_column(self, project, name):
+        url = self.get_full_url(PROJECT_CREATE_COLUMN, project_id=project['id'])
+        data = {
+            'name': name,
+        }
+
+        return self.request('post', url, json=data).json()
+
+    def create_project(self, name, body):
+        url = self.get_full_url(
+            PROJECTS_ENDPOINT,
+            owner=ISSUE_BACKEND_USER
+        )
+
+        data = {
+          'name': name,
+          'body': body,
+        }
+
+        print(data)
+
+        return self.request('post', url, json=data).json()
+
+    def delete_column(self, column_data):
+        url = self.get_full_url(COLUMN_DELETE_ENDPOINT, id=column_data['id'])
+
+        return self.request('delete', url)
+
     @lru_cache()
-    def get_card(self, project):
+    def get_card(self, project, issue_data):
         """
         Returns the card for this issue within the project
+
+        Args:
+            project (dict): the project data from the github api
+            issue_data (dict): issue data from the github api
         """
-        issue_data = self.issue
         issue_url = issue_data['url']
 
         # print('\n\nissue:')
@@ -132,28 +169,17 @@ class GithubSession(object):
             raise CardError(f'Unable to find card for issue {issue_url}')
 
     @lru_cache()
-    def get_cards(self, column):
+    def get_cards(self, column_data):
         """
         Iterates through all the cards in a column_data
 
         This method checks the response headers for the "Link" header
         which provides pagination urls to get the next batch of cards
         """
-        cards_url = column['cards_url']
-        while cards_url:
-            response = self.request('get', cards_url)
-
+        cards_url = column_data['cards_url']
+        for response in self.get_paginated(cards_url):
             for item in response.json():
                 yield item
-
-            cards_url = None
-            link_header = response.headers.get('Link')
-            if link_header:
-                links = GithubLinkHeader.parse(link_header)
-                for link in links:
-                    if link.rel == 'next':
-                        cards_url = link.url
-                        break
 
     @lru_cache()
     def get_column(self, project, name):
@@ -173,8 +199,9 @@ class GithubSession(object):
             project (dict): the dictionary from the projects API requests
         '''
         columns_url = project['columns_url']
-
-        return self.request('get', columns_url).json()
+        for response in self.get_paginated(columns_url):
+            for item in response.json():
+                yield item
 
     def get_full_url(self, endpoint, **format_args):
         full_url = f'{ISSUE_BACKEND_URL}{endpoint}'.format(**format_args)
@@ -192,6 +219,21 @@ class GithubSession(object):
         )
 
         return self.request('get', url).json()
+
+    def get_paginated(self, url):
+        while url:
+            response = self.request('get', url)
+
+            yield response
+
+            url = None
+            link_header = response.headers.get('Link')
+            if link_header:
+                links = GithubLinkHeader.parse(link_header)
+                for link in links:
+                    if link.rel == 'next':
+                        url = link.url
+                        break
 
     def get_project(self, name):
         projects = self.projects
@@ -218,10 +260,18 @@ class GithubSession(object):
             import pdb; pdb.set_trace()
             print(exc)
 
+    def move_column(self, column_data, position):
+        url = self.get_full_url(COLUMN_MOVE_ENDPOINT, id=column_data['id'])
+        data = {
+            'position': position,
+        }
+
+        return self.request('post', url, json=data)
+
     @property
     @lru_cache()
     def projects(self):
-        full_url = self.get_full_url(PROJECTS_ENDPOINT, org=ISSUE_BACKEND_REPO)
+        full_url = self.get_full_url(PROJECTS_ENDPOINT, owner=ISSUE_BACKEND_REPO)
 
         return self.request('get', full_url).json()
 
