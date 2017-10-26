@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-create a new branch for the given redmine issue
+misc utilities for managing GitHub issues
 """
 import argparse
 import importlib
@@ -121,9 +121,9 @@ def issue_branch():
 
 def issue_closed():
     """
-    Finds issues that are closed in all project columns (except `done`)
+    Finds issues that are closed in all project columns (except `done`) and moves them to `done`
     """
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=issue_closed.__doc__)
 
     parser.add_argument('project', help='the project name')
     parser.add_argument('--column', default='done', help='the column closed issues should go to, default `done`')
