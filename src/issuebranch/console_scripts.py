@@ -116,6 +116,12 @@ def issue_branch():
 
         base = proc(*command_l[1:]).stdout.decode('utf8').strip()
 
+    # move this issue to the active column
+    try:
+        issue_column(['issue_column', 'roadmap', issue_number, 'active'])
+    except:
+        print('Unable to move card to the active column, is it in triage?')
+
     make_branch(slug, base)
 
 
