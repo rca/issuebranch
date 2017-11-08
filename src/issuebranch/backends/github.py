@@ -23,6 +23,8 @@ ISSUE_BACKEND_USER = os.environ['ISSUE_BACKEND_USER']
 ISSUE_BACKEND_ENDPOINT = '/repos/{}/{}/issues/{{issue}}'.format(ISSUE_BACKEND_USER, ISSUE_BACKEND_REPO)
 ISSUE_LABELS_ENDPOINT = '/repos/{owner}/{repo}/issues/{number}/labels'
 
+MILESTONES_ENDPOINT = '/repos/{owner}/{repo}/milestones'
+
 PROJECTS_ENDPOINT = '/orgs/{owner}/projects'
 PROJECT_CREATE_COLUMN = '/projects/{project_id}/columns'
 
@@ -219,6 +221,16 @@ class GithubSession(object):
         )
 
         return self.request('get', url).json()
+
+    def get_milestones(self):
+        columns_url = self.get_full_url(
+            MILESTONES_ENDPOINT,
+            owner=ISSUE_BACKEND_USER,
+            repo=ISSUE_BACKEND_REPO
+        )
+        for response in self.get_paginated(columns_url):
+            for item in response.json():
+                yield item
 
     def get_paginated(self, url):
         while url:
