@@ -95,19 +95,25 @@ class GithubSession(object):
     CardError = CardError
     PrefixError = PrefixError
 
-    def add_label(self, label):
+    def add_label(self, label_data, number=None):
         """
-        Adds a label to the current issue
+        Adds a label to an issue
+
+        Args:
+            label_data (dict): Github API label data
+            number (int): optional issue number, or the current issue by default
         """
+        number = number or self.issue_number
+
         url = self.get_full_url(
             ISSUE_LABELS_ENDPOINT,
             owner=ISSUE_BACKEND_USER,
             repo=ISSUE_BACKEND_REPO,
-            number=self.issue_number
+            number=number
         )
 
         data = [
-            label['name'],
+            label_data['name'],
         ]
 
         return self.request('post', url, json=data)
