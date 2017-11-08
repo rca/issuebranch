@@ -22,6 +22,7 @@ ISSUE_BACKEND_USER = os.environ['ISSUE_BACKEND_USER']
 
 ISSUE_LIST_ENDPOINT = '/repos/{owner}/{repo}/issues'
 ISSUE_COMMENT_ENDPOINT = ISSUE_LIST_ENDPOINT + '/{number}/comments'
+ISSUE_UPDATE_ENDPOINT = ISSUE_LIST_ENDPOINT + '/{number}'
 
 ISSUE_BACKEND_ENDPOINT = ISSUE_LIST_ENDPOINT + '/{issue}'
 ISSUE_LABELS_ENDPOINT = '/repos/{owner}/{repo}/issues/{number}/labels'
@@ -387,6 +388,18 @@ class GithubSession(object):
         })
 
         return s
+
+    def update_issue(self, number=None, **kwargs):
+        number = number or self.issue_number
+
+        url = self.get_full_url(
+            ISSUE_UPDATE_ENDPOINT,
+            owner=ISSUE_BACKEND_USER,
+            repo=ISSUE_BACKEND_REPO,
+            number=number
+        )
+
+        return self.request('patch', url, json=kwargs).json()
 
 
 class Backend(BaseBackend, GithubSession):
