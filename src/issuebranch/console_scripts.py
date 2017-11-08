@@ -203,6 +203,9 @@ def issue_closed():
 
 
 def issue_column(argv=None):
+    """
+    Moves an issue to the given column
+    """
     parser = argparse.ArgumentParser()
 
     parser.add_argument('project', help='the project name')
@@ -232,6 +235,9 @@ def issue_column(argv=None):
 
 
 def issue_icebox():
+    """
+    Find issues not in any project and add them to the roadmap icebox
+    """
     parser = argparse.ArgumentParser()
 
     parser.add_argument('project', help='the project name')
