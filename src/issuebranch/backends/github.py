@@ -21,6 +21,7 @@ ISSUE_BACKEND_URL = 'https://api.github.com'
 ISSUE_BACKEND_USER = os.environ['ISSUE_BACKEND_USER']
 
 ISSUE_LIST_ENDPOINT = '/repos/{owner}/{repo}/issues'
+ISSUE_COMMENT_ENDPOINT = ISSUE_LIST_ENDPOINT + '/{number}/comments'
 
 ISSUE_BACKEND_ENDPOINT = ISSUE_LIST_ENDPOINT + '/{issue}'
 ISSUE_LABELS_ENDPOINT = '/repos/{owner}/{repo}/issues/{number}/labels'
@@ -121,6 +122,22 @@ class GithubSession(object):
         ]
 
         return self.request('post', url, json=data)
+
+    def comment(self, comment, number=None):
+        number = number or self.issue_number
+
+        url = self.get_full_url(
+            ISSUE_COMMENT_ENDPOINT,
+            owner=ISSUE_BACKEND_USER,
+            repo=ISSUE_BACKEND_REPO,
+            number=number
+        )
+
+        data = {
+            'body': comment,
+        }
+
+        return self.request('post', url, json=data).json()
 
     def create_card(self, column_data, issue_data):
         url = self.get_full_url(CARD_CREATE_ENDPOINT, column_id=column_data['id'])
