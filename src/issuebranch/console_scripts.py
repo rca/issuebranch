@@ -125,6 +125,40 @@ def issue_branch():
     make_branch(slug, base)
 
 
+def issue_close_done():
+    """
+    Closes any issue that is still open in the done column
+    """
+    parser = argparse.ArgumentParser(description=issue_close_done.__doc__)
+
+    parser.add_argument('project', help='the project name')
+    parser.add_argument('--column', default='done', help='the column to close issues in, default `done`')
+
+    args = parser.parse_args()
+
+    session = GithubSession()
+
+    project_data = session.get_project(args.project)
+
+    column_name = args.column.lower()
+    column_data = session.get_column(project_data, column_name)
+
+    for card in session.get_cards(column_data):
+        issue_data = session.request('get', card['content_url']).json()
+
+        if issue_data['state'] == 'closed':
+            print('.', end='')
+
+            continue
+
+        issue_number = issue_data['number']
+
+        print(f'\nclosing issue {issue_number}')
+
+        session.comment('closing issue in done column', number=issue_number)
+        session.update_issue(number=issue_number, state='closed')
+
+
 def issue_closed():
     """
     Finds issues that are closed in all project columns (except `done`) and moves them to `done`
