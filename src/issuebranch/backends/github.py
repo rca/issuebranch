@@ -240,9 +240,9 @@ class GithubSession(object):
             for item in response.json():
                 yield item
 
-    def get_paginated(self, url):
+    def get_paginated(self, url, *args, **kwargs):
         while url:
-            response = self.request('get', url)
+            response = self.request('get', url, *args, **kwargs)
 
             yield response
 
