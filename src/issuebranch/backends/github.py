@@ -226,7 +226,9 @@ class GithubSession(object):
             repo=ISSUE_BACKEND_REPO
         )
 
-        return self.request('get', url).json()
+        for response in self.get_paginated(url):
+            for item in response.json():
+                yield item
 
     def get_milestones(self):
         columns_url = self.get_full_url(
