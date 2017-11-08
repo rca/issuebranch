@@ -231,6 +231,9 @@ class GithubSession(object):
                 yield item
 
     def get_milestones(self):
+        """
+        Returns all the milestones for the user/repo values in the environment
+        """
         columns_url = self.get_full_url(
             MILESTONES_ENDPOINT,
             owner=ISSUE_BACKEND_USER,
