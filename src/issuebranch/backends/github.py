@@ -20,7 +20,9 @@ ISSUE_BACKEND_REPO = os.environ['ISSUE_BACKEND_REPO']
 ISSUE_BACKEND_URL = 'https://api.github.com'
 ISSUE_BACKEND_USER = os.environ['ISSUE_BACKEND_USER']
 
-ISSUE_BACKEND_ENDPOINT = '/repos/{owner}/{repo}/issues/{issue}'
+ISSUE_LIST_ENDPOINT = '/repos/{owner}/{repo}/issues'
+
+ISSUE_BACKEND_ENDPOINT = ISSUE_LIST_ENDPOINT + '/{issue}'
 ISSUE_LABELS_ENDPOINT = '/repos/{owner}/{repo}/issues/{number}/labels'
 
 LABELS_CREATE_ENDPOINT = '/repos/{owner}/{repo}/labels'
@@ -234,6 +236,25 @@ class GithubSession(object):
         full_url = f'{ISSUE_BACKEND_URL}{endpoint}'.format(**format_args)
 
         return full_url
+
+    def get_issues(self, **filters):
+        """
+        Returns all the issues in the user/repo values in the environment
+
+        Args:
+            filters (dict): parameters per the v3 API
+        """
+        url = self.get_full_url(
+            ISSUE_LIST_ENDPOINT,
+            owner=ISSUE_BACKEND_USER,
+            repo=ISSUE_BACKEND_REPO
+        )
+
+        params = filters or {}
+
+        for response in self.get_paginated(url, params=params):
+            for item in response.json():
+                yield item
 
     def get_labels(self):
         """
