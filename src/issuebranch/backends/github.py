@@ -23,6 +23,8 @@ ISSUE_BACKEND_USER = os.environ['ISSUE_BACKEND_USER']
 ISSUE_BACKEND_ENDPOINT = '/repos/{owner}/{repo}/issues/{issue}'
 ISSUE_LABELS_ENDPOINT = '/repos/{owner}/{repo}/issues/{number}/labels'
 
+LABELS_CREATE_ENDPOINT = '/repos/{owner}/{repo}/labels'
+
 MILESTONES_ENDPOINT = '/repos/{owner}/{repo}/milestones'
 
 PROJECTS_ENDPOINT = '/orgs/{owner}/projects'
@@ -131,6 +133,23 @@ class GithubSession(object):
         url = self.get_full_url(PROJECT_CREATE_COLUMN, project_id=project['id'])
         data = {
             'name': name,
+        }
+
+        return self.request('post', url, json=data).json()
+
+    def create_label(self, name, color):
+        """
+        Creates a label in the user/repo data from the environent
+        """
+        url = self.get_full_url(
+            LABELS_CREATE_ENDPOINT,
+            owner=ISSUE_BACKEND_USER,
+            repo=ISSUE_BACKEND_REPO
+        )
+
+        data = {
+            "name": name,
+            "color": color,
         }
 
         return self.request('post', url, json=data).json()
