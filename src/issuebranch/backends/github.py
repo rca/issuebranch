@@ -20,7 +20,7 @@ ISSUE_BACKEND_REPO = os.environ['ISSUE_BACKEND_REPO']
 ISSUE_BACKEND_URL = 'https://api.github.com'
 ISSUE_BACKEND_USER = os.environ['ISSUE_BACKEND_USER']
 
-ISSUE_BACKEND_ENDPOINT = '/repos/{}/{}/issues/{{issue}}'.format(ISSUE_BACKEND_USER, ISSUE_BACKEND_REPO)
+ISSUE_BACKEND_ENDPOINT = '/repos/{owner}/{repo}/issues/{issue}'
 ISSUE_LABELS_ENDPOINT = '/repos/{owner}/{repo}/issues/{number}/labels'
 
 MILESTONES_ENDPOINT = '/repos/{owner}/{repo}/milestones'
@@ -325,7 +325,12 @@ class Backend(BaseBackend, GithubSession):
     @property
     @lru_cache()
     def issue(self):
-        full_url = self.get_full_url(ISSUE_BACKEND_ENDPOINT, issue=self.issue_number)
+        full_url = self.get_full_url(
+            ISSUE_BACKEND_ENDPOINT,
+            owner=ISSUE_BACKEND_USER,
+            repo=ISSUE_BACKEND_REPO,
+            issue=self.issue_number
+        )
 
         return self.request('get', full_url).json()
 
