@@ -366,6 +366,10 @@ def projects_clone(args):
                 else:
                     new_card = session.create_card(new_column_data, issue_data)
 
+    # close the new project
+    session.close_project(new_project)
+
+
 def projects_columns(args):
     session = GithubSession()
 
