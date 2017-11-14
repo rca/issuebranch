@@ -7,7 +7,7 @@ from requests.exceptions import HTTPError
 from functools import lru_cache as lru_cache_base, wraps
 
 from . import BaseBackend
-from ..exceptions import PrefixError
+from ..exceptions import CommandError, PrefixError
 
 CARD_CREATE_ENDPOINT = '/projects/columns/{column_id}/cards'
 CARD_MOVE_ENDPOINT = '/projects/columns/cards/{id}/moves'
@@ -319,10 +319,10 @@ class GithubSession(object):
     def get_project(self, name):
         projects = self.projects
         for project in projects:
-            if project['name'].lower() == name:
+            if project['name'].lower() == name.lower():
                 return project
         else:
-            raise CommandError(f'Unable to find project={args.project}')
+            raise CommandError(f'Unable to find project name={name}')
 
     def move_card(self, card, column, position=None):
         position = (position or 'top')
