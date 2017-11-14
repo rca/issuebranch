@@ -32,6 +32,7 @@ LABELS_CREATE_ENDPOINT = '/repos/{owner}/{repo}/labels'
 MILESTONES_ENDPOINT = '/repos/{owner}/{repo}/milestones'
 
 PROJECTS_ENDPOINT = '/orgs/{owner}/projects'
+PROJECT_ENDPOINT = '/projects/{project_id}'
 PROJECT_CREATE_COLUMN = '/projects/{project_id}/columns'
 
 REPO_LABELS_ENDPOINT = '/repos/{owner}/{repo}/labels'
@@ -123,6 +124,18 @@ class GithubSession(object):
         ]
 
         return self.request('post', url, json=data)
+
+    def close_project(self, project_data):
+        """
+        closes the given project
+        """
+        url = self.get_full_url(PROJECT_ENDPOINT, project_id=project_data['id'])
+
+        data = {
+            'state': 'closed',
+        }
+
+        return self.request('patch', url, json=data).json()
 
     def comment(self, comment, number=None):
         number = number or self.issue_number
