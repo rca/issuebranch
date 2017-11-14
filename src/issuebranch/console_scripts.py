@@ -326,7 +326,7 @@ def projects_clone(args):
     if not new_project:
         print(f'creating {args.new_name}')
 
-        session.create_project(args.new_name, project['body'])
+        new_project = session.create_project(args.new_name, project['body'])
 
     # get the new project's columns and index them by name
     new_columns = {}
