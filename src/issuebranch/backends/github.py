@@ -301,6 +301,16 @@ class GithubSession(object):
             for item in response.json():
                 yield item
 
+    def get_milestone(self, name):
+        """
+        Returns a single milestone
+        """
+        for milestone in self.get_milestones():
+            if milestone['title'].lower() == name.lower():
+                return milestone
+        else:
+            raise CommandError(f'unable to find milestone name={name}')
+
     def get_milestones(self):
         """
         Returns all the milestones for the user/repo values in the environment
