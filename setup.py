@@ -14,6 +14,7 @@ setup(
     packages=['issuebranch','issuebranch.backends'],
     entry_points={
         'console_scripts': [
+            'backlog-milestone = issuebranch.console_scripts:backlog_milestone',
             'issue-branch = issuebranch.console_scripts:issue_branch',
             'issue-close-done = issuebranch.console_scripts:issue_close_done',
             'issue-closed = issuebranch.console_scripts:issue_closed',
