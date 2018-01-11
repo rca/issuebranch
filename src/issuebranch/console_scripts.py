@@ -318,6 +318,7 @@ def projects():
 
     clone_parser = subcommands.add_parser('clone')
     clone_parser.add_argument('new_name', help='name of the new project')
+    clone_parser.add_argument('--no-cards', action='store_false', dest='cards', help='do not clone cards')
 
     columns_parser = subcommands.add_parser('columns')
     columns_parser.add_argument('--action', action='store_const', const=projects_columns_print, default=projects_columns_print, help='print the columns')
@@ -377,6 +378,10 @@ def projects_clone(args):
             new_column_data = session.create_column(new_project, column_name)
 
         # print(new_column_data)
+
+        # when cloning cards is not desired, loop here
+        if not args.cards:
+            continue
 
         # get the new column's cards
         new_cards = dict([(x['content_url'], x) for x in session.get_cards(new_column_data)])
