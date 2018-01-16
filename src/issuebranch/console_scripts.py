@@ -274,8 +274,11 @@ def issue_icebox():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('project', help='the project name')
+    parser.add_argument('--icebox-column', default='icebox')
 
     args = parser.parse_args()
+
+    icebox_column = args.icebox_column
 
     session = GithubSession()
 
@@ -287,7 +290,7 @@ def issue_icebox():
         issue = get_issue(issue_data['number'])
 
         project = issue.get_project(args.project)
-        column = issue.get_column(project, 'icebox')
+        column = issue.get_column(project, icebox_column)
 
         try:
             issue.create_card(column, issue_data)
