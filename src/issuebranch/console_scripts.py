@@ -44,6 +44,39 @@ class CommandError(Exception):
     pass
 
 
+def backlog_milestone():
+    """
+    Moves issue cards within the given miletone from icebox to the backlog column
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        'project',
+        help=f'name of the project'
+    )
+    parser.add_argument('milestone', help='name of the milestone')
+
+    args = parser.parse_args()
+
+    session = GithubSession()
+
+    project_data = session.get_project(args.project)
+
+    milestone_data = session.get_milestone(args.milestone)
+    milestone_title = milestone_data['title']
+
+    backlog_data = session.get_column(project_data, 'backlog')
+    icebox_data = session.get_column(project_data, 'icebox')
+
+    results = session.search(f'repo:openslate/openslate milestone:"{milestone_title}"')
+    for search_data in results['items']:
+        issue_data = get_issue(search_data['number']).issue
+        issue_card = session.get_card(project_data, issue_data)
+
+        if issue_card['column_url'] == icebox_data['url']:
+            session.move_card(issue_card, backlog_data)
+
+        print('.', end='')
+
 def get_issue(issue_number):
     """
     Returns the issue object for the given number
@@ -285,6 +318,7 @@ def projects():
 
     clone_parser = subcommands.add_parser('clone')
     clone_parser.add_argument('new_name', help='name of the new project')
+    clone_parser.add_argument('--no-cards', action='store_false', dest='cards', help='do not clone cards')
 
     columns_parser = subcommands.add_parser('columns')
     columns_parser.add_argument('--action', action='store_const', const=projects_columns_print, default=projects_columns_print, help='print the columns')
@@ -344,6 +378,10 @@ def projects_clone(args):
             new_column_data = session.create_column(new_project, column_name)
 
         # print(new_column_data)
+
+        # when cloning cards is not desired, loop here
+        if not args.cards:
+            continue
 
         # get the new column's cards
         new_cards = dict([(x['content_url'], x) for x in session.get_cards(new_column_data)])

@@ -248,7 +248,7 @@ class GithubSession(object):
             if column['name'].lower() == name:
                 return column
         else:
-            raise CommandError(f'Unable to find column={args.column}')
+            raise CommandError(f'Unable to find name={name}')
 
     @lru_cache()
     def get_columns(self, project):
@@ -300,6 +300,16 @@ class GithubSession(object):
         for response in self.get_paginated(url):
             for item in response.json():
                 yield item
+
+    def get_milestone(self, name):
+        """
+        Returns a single milestone
+        """
+        for milestone in self.get_milestones():
+            if milestone['title'].lower() == name.lower():
+                return milestone
+        else:
+            raise CommandError(f'unable to find milestone name={name}')
 
     def get_milestones(self):
         """
