@@ -248,7 +248,7 @@ class GithubSession(object):
             if column['name'].lower() == name:
                 return column
         else:
-            raise CommandError(f'Unable to find column={args.column}')
+            raise CommandError(f'Unable to find name={name}')
 
     @lru_cache()
     def get_columns(self, project):
