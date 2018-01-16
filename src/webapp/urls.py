@@ -15,7 +15,16 @@ Including another URLconf
 """
 from django.conf.urls import url
 from django.contrib import admin
+from django.urls import include, path
+
+from rest_framework import routers
+
+from webhook import views
+
+router = routers.DefaultRouter()
+router.register(r'webhook', views.WebhookViewSet, base_name='webhook')
 
 urlpatterns = [
+    url(r'^', include(router.urls)),
     url(r'^admin/', admin.site.urls),
 ]
