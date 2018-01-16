@@ -19,5 +19,7 @@ RUN pip install .
 
 WORKDIR ${PROJECT_ROOT}/src
 
+ENV PYTHONUNBUFFERED=1
+
 #CMD ["python", "manage.py", "runserver", "0.0.0.0:4500"]
 CMD ["/bin/bash"]
