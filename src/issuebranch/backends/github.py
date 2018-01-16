@@ -10,7 +10,8 @@ from . import BaseBackend
 from ..exceptions import CommandError, PrefixError
 
 CARD_CREATE_ENDPOINT = '/projects/columns/{column_id}/cards'
-CARD_MOVE_ENDPOINT = '/projects/columns/cards/{id}/moves'
+CARD_ENDPOINT = '/projects/columns/cards/{id}'
+CARD_MOVE_ENDPOINT = CARD_ENDPOINT + '/moves'
 
 COLUMN_DELETE_ENDPOINT = '/projects/columns/{id}'
 COLUMN_MOVE_ENDPOINT = '/projects/columns/{id}/moves'
@@ -201,6 +202,11 @@ class GithubSession(object):
         print(data)
 
         return self.request('post', url, json=data).json()
+
+    def delete_card(self, card_data):
+        url = self.get_full_url(CARD_ENDPOINT, id=card_data['id'])
+
+        return self.request('delete', url)
 
     def delete_column(self, column_data):
         url = self.get_full_url(COLUMN_DELETE_ENDPOINT, id=column_data['id'])
