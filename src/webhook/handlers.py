@@ -132,5 +132,6 @@ class ProjectHandler(object):
             self.session.delete_card(card_data)
 
 handler_types = {
+    'issue': IssueHandler,
     'project': ProjectHandler,
 }
