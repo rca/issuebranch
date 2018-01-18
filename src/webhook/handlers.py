@@ -46,7 +46,7 @@ class IssueHandler(BaseHandler):
         action = self.data['action']
 
         action_fn_name = f'do_{action}'
-        action_fn = getattr(self, action_fn_name)
+        action_fn = getattr(self, action_fn_name, None)
         if action_fn is None:
             self.logger.warning(f'no function found for action={action}')
             return
