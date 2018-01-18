@@ -69,7 +69,7 @@ class ProjectHandler(object):
         column_data = self.get_request_data(column_url)
 
         if column_data['name'].lower() == ON_DECK_COLUMN_NAME:
-            self.add_to_on_deck()
+            self.add_to_on_deck(column_data)
 
             return
 
