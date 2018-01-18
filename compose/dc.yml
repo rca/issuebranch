@@ -1,0 +1,14 @@
+profiles:
+  stack:
+    - docker-compose.yml
+
+
+tasks:
+  default:
+    command: dc --profile stack --environment issuebranch
+
+  build:
+    command: dc task default --tag-version --tag-docker-image --write-tag --push build
+
+  deploy:
+    command: dc task default --deploy
