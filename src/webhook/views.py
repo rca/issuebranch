@@ -21,7 +21,10 @@ class WebhookViewSet(viewsets.ViewSet):
         action_type = get_action_type(data)
         if action_type:
             handler_cls = handlers.handler_types.get(action_type)
-            handler_cls(data).run()
+            if handler_cls:
+                handler_cls(data).run()
+            else:
+                self.logger.warning(f'No handler found for action_type={action_type}')
         else:
             self.logger.warning(f'No action_type found for data={data}')
 
