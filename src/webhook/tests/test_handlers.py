@@ -14,11 +14,16 @@ on_deck_column_data = {'url': 'https://api.github.com/projects/columns/2001377',
 
 
 class ProjectHandlerTestCase(TestCase):
+    def _get_project_handler(self, data):
+         project_handler = handlers.ProjectHandler(data)
+         project_handler.session = mock.Mock()
+
+         return project_handler
+
     def test_move_grooming_card(self):
         data = get_project_webhook_data()
-        project_handler = handlers.ProjectHandler(data)
+        project_handler = self._get_project_handler(data)
 
-        project_handler.session = mock.Mock()
         project_handler.session.request.return_value.json.return_value = {
             'url': 'https://api.github.com/projects/columns/2001376',
             'project_url': 'https://api.github.com/projects/1206552',
@@ -38,9 +43,8 @@ class ProjectHandlerTestCase(TestCase):
 
     def test_move_on_deck_card(self):
         data = get_project_webhook_data()
-        project_handler = handlers.ProjectHandler(data)
+        project_handler = self._get_project_handler(data)
 
-        project_handler.session = mock.Mock()
         project_handler.session.request.return_value.json.return_value = {
             'url': 'https://api.github.com/projects/columns/2001376',
             'project_url': 'https://api.github.com/projects/1206552',
@@ -51,15 +55,13 @@ class ProjectHandlerTestCase(TestCase):
             'updated_at': '2018-01-17T17:46:36Z'
         }
 
-        project_handler.sync_on_deck = mock.Mock()
-
         project_handler.run()
 
         # an on deck card will sync!
         project_handler.sync_on_deck.assert_called_with()
 
     def test_detect_remove_from_on_deck(self):
-        project_handler = handlers.ProjectHandler(from_on_deck_project_data)
+        project_handler = self._get_project_handler(from_on_deck_project_data)
         project_handler.remove_from_on_deck = mock.Mock()
 
         project_handler.run()
@@ -67,7 +69,7 @@ class ProjectHandlerTestCase(TestCase):
         project_handler.remove_from_on_deck.assert_called_with(mock.ANY)
 
     def test_detect_add_to_on_deck(self):
-        project_handler = handlers.ProjectHandler(to_on_deck_project_data)
+        project_handler = self._get_project_handler(to_on_deck_project_data)
         project_handler.add_to_on_deck = mock.Mock()
 
         project_handler.run()
@@ -75,7 +77,7 @@ class ProjectHandlerTestCase(TestCase):
         project_handler.add_to_on_deck.assert_called_with(mock.ANY)
 
     def test_add_to_on_deck(self):
-        project_handler = handlers.ProjectHandler(to_on_deck_project_data)
+        project_handler = self._get_project_handler(to_on_deck_project_data)
         project_handler.add_to_on_deck = mock.Mock()
 
         project_handler.run()
