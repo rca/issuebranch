@@ -22,7 +22,7 @@ class BaseHandler(object):
         self.session = GithubSession()
 
 
-class IssueHandler(object):
+class IssueHandler(BaseHandler):
     """
     Handles issue actions
     """
@@ -53,7 +53,7 @@ class IssueHandler(object):
 
         action_fn()
 
-class ProjectHandler(object):
+class ProjectHandler(BaseHandler):
     """
     Handles project actions
     """
