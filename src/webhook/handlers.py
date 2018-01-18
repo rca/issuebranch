@@ -43,7 +43,7 @@ class IssueHandler(BaseHandler):
         self.session.create_card(parking_log_column_data, issue_data)
 
     def run(self):
-        self.data['action']
+        action = self.data['action']
 
         action_fn_name = f'do_{action}'
         action_fn = getattr(self, action_fn_name)
