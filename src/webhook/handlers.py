@@ -1,8 +1,10 @@
 import functools
+import logging
 
 from issuebranch.backends.github import Backend, GithubSession
 
 ON_DECK_COLUMN_NAME = 'on deck'
+PARKING_LOT_NAME = 'parking lot'
 
 PRODUCT_BACKLOG_NAME = 'product backlog'
 SCRUM_BOARD_NAME = 'scrum board'
@@ -13,15 +15,48 @@ OTHER_PROJECT = {
 }
 
 
-class ProjectHandler(object):
-    """
-    Handles project actions
-    """
+class BaseHandler(object):
     def __init__(self, data):
         self.data = data
 
         self.session = GithubSession()
 
+
+class IssueHandler(object):
+    """
+    Handles issue actions
+    """
+    @property
+    def logger(self):
+        return logging.getLogger(f'{__name__}.{self.__class__.__name__}')
+
+    def do_opened(self):
+        """
+        When an issue is opened add it to the parking lot
+        """
+        issue_number = self.data['issue']['number']
+        issue_data = Backend(issue_number).issue
+
+        product_backlog_data = self.session.get_project(PRODUCT_BACKLOG_NAME)
+        parking_log_column_data = self.session.get_column(product_backlog_data, PARKING_LOT_NAME)
+
+        self.session.create_card(parking_log_column_data, issue_data)
+
+    def run(self):
+        self.data['action']
+
+        action_fn_name = f'do_{action}'
+        action_fn = getattr(self, action_fn_name)
+        if action_fn is None:
+            self.logger.warning(f'no function found for action={action}')
+            return
+
+        action_fn()
+
+class ProjectHandler(object):
+    """
+    Handles project actions
+    """
     def add_to_on_deck(self, column_data):
         # print(f'add_to_on_deck, column_data={column_data}')
         issue_url = self.project_card_data['content_url']
