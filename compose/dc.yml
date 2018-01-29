@@ -7,7 +7,7 @@ tasks:
   default:
     command: dc --profile stack --environment issuebranch
 
-  build:
+  publish:
     command: dc task default --tag-version --tag-docker-image --write-tag --push build
 
   deploy:
