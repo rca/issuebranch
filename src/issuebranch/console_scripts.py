@@ -14,6 +14,7 @@ import sys
 from slugify import slugify
 
 from issuebranch.backends.github import GithubSession, HTTPError
+from issuebranch.settings import SCRUM_BOARD_NAME
 
 DEFAULT_BASE_BRANCH = 'origin/master'
 MAX_SLUG_LENGTH = 32
@@ -151,7 +152,7 @@ def issue_branch():
 
     # move this issue to the active column
     try:
-        issue_column(['issue_column', 'roadmap', issue_number, 'active'])
+        issue_column(['issue_column', SCRUM_BOARD_NAME, issue_number, 'active'])
     except:
         print('Unable to move card to the active column, is it in triage?')
 

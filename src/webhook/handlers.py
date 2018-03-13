@@ -2,17 +2,7 @@ import functools
 import logging
 
 from issuebranch.backends.github import Backend, GithubSession
-
-ON_DECK_COLUMN_NAME = 'on deck'
-PARKING_LOT_NAME = 'parking lot'
-
-PRODUCT_BACKLOG_NAME = 'product backlog'
-SCRUM_BOARD_NAME = 'scrum board'
-
-OTHER_PROJECT = {
-    PRODUCT_BACKLOG_NAME: SCRUM_BOARD_NAME,
-    SCRUM_BOARD_NAME: PRODUCT_BACKLOG_NAME,
-}
+from issuebranch.settings import *
 
 
 class BaseHandler(object):
