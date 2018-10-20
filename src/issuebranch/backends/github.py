@@ -171,6 +171,23 @@ class GithubSession(object):
 
         return self.request('post', url, json=data).json()
 
+    def create_issue(self, title, **kwargs):
+        """
+        Create an issue on the default board.
+        """
+        url = self.get_full_url(
+            ISSUE_LIST_ENDPOINT,
+            owner=ISSUE_BACKEND_USER,
+            repo=ISSUE_BACKEND_REPO
+        )
+        required_fields = {
+            'title': title,
+        }
+        data = dict([(k, v) for k, v in kwargs.items() if v])
+        data.update(required_fields)
+
+        return self.request('post', url, json=data).json()
+
     def create_label(self, name, color):
         """
         Creates a label in the user/repo data from the environent

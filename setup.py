@@ -18,6 +18,7 @@ setup(
             'issue-branch = issuebranch.console_scripts:issue_branch',
             'issue-close-done = issuebranch.console_scripts:issue_close_done',
             'issue-closed = issuebranch.console_scripts:issue_closed',
+            'issue-create = issuebranch.console_scripts:issue_create',
             'issue-column = issuebranch.console_scripts:issue_column',
             'issue-icebox = issuebranch.console_scripts:issue_icebox',
             'issue-show = issuebranch.console_scripts:issue_show',
