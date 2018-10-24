@@ -114,7 +114,9 @@ def issue_create():
         '-m',
         '--milestone',
         default=None,
-        help='milestone to place this issue in'
+        help='milestone id to place this issue in. '
+             'This should be an integer. '
+             'Find milestone ids with the `milestones` command.'
     )
     parser.add_argument(
         '-p',
@@ -135,14 +137,11 @@ def issue_create():
     # only required arg for creating an issue
     title = args.title
 
-    milestone = session.get_milestone(args.milestone) if args.milestone else None
-
     additional_args = {
         'assignees': args.assignees,
         'body': args.body,
         'labels': args.labels,
-        # we are still one step away from being able to use milestones
-        # 'milestone': milestone,
+        'milestone': args.milestone,
     }
 
     issue = session.create_issue(title, **additional_args)
@@ -556,3 +555,13 @@ def projects_columns_print(args, session, column_name, project):
             print(json.dumps(_column, indent=4))
         else:
             print(_column['name'])
+
+
+def milestones():
+
+    session = GithubSession()
+
+    display_pairs = sorted([(m.get("number"), m.get("title")) for m in session.get_milestones()], key=lambda x: x[1])
+
+    for pair in display_pairs:
+        print(f'{pair[0]} {pair[1]}')

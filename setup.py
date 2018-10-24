@@ -22,7 +22,8 @@ setup(
             'issue-column = issuebranch.console_scripts:issue_column',
             'issue-icebox = issuebranch.console_scripts:issue_icebox',
             'issue-show = issuebranch.console_scripts:issue_show',
-            'projects = issuebranch.console_scripts:projects'
+            'milestones = issuebranch.console_scripts:milestones',
+            'projects = issuebranch.console_scripts:projects',
         ],
     },
     install_requires=[
