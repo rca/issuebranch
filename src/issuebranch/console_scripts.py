@@ -7,6 +7,8 @@ import importlib
 import json
 import os
 import re
+import tempfile
+
 import sh
 import shlex
 import sys
@@ -104,6 +106,13 @@ def issue_create():
         help='name of column to place card in'
     )
     parser.add_argument(
+        '-i',
+        '--interactive',
+        action='store_true',
+        default=DEFAULT_COLUMN_NAME,
+        help='Edit issue title and body in vim',
+    )
+    parser.add_argument(
         '-l',
         '--labels',
         default=None,
@@ -127,19 +136,41 @@ def issue_create():
     parser.add_argument(
         'title',
         default=None,
+        nargs='?',
         help='issue title'
     )
 
     args = parser.parse_args()
 
-    session = GithubSession()
-
-    # only required arg for creating an issue
+    # only required arg for creating an issue. can be overridden in interactive mode
     title = args.title
+
+    # this can be overridden in interactive mode
+    body = args.body
+
+    if args.interactive:
+        with tempfile.NamedTemporaryFile('w') as fh:
+            path = fh.name
+
+            editor = os.environ.get('EDITOR', os.environ.get('VISUAL', 'vi'))
+
+            proc = getattr(sh, editor)
+
+            proc(path, _fg=True)
+
+            with open(path, 'r') as rfh:
+
+                # grab top line as title
+                title = rfh.readline().replace('\n', '')
+
+                # grab remaining lines as body
+                body = ''.join(rfh.readlines())
+
+    session = GithubSession()
 
     additional_args = {
         'assignees': args.assignees,
-        'body': args.body,
+        'body': body,
         'labels': args.labels,
         'milestone': args.milestone,
     }
