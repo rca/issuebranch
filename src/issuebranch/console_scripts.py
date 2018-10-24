@@ -415,6 +415,7 @@ def projects():
 
     command_fn(args)
 
+
 def projects_clone(args):
     session = GithubSession()
 
