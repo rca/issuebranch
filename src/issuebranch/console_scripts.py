@@ -14,7 +14,7 @@ import sys
 from slugify import slugify
 
 from issuebranch.backends.github import GithubSession, HTTPError
-from issuebranch.settings import SCRUM_BOARD_NAME
+from issuebranch.settings import SCRUM_BOARD_NAME, DEFAULT_COLUMN_NAME
 
 DEFAULT_BASE_BRANCH = 'origin/master'
 MAX_SLUG_LENGTH = 32
@@ -52,7 +52,7 @@ def backlog_milestone():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         'project',
-        help=f'name of the project'
+        help='name of the project'
     )
     parser.add_argument('milestone', help='name of the milestone')
 
@@ -77,6 +77,84 @@ def backlog_milestone():
             session.move_card(issue_card, backlog_data)
 
         print('.', end='')
+
+
+def issue_create():
+    """
+    Create an issue in GitHub and place it as a card in a project.
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-a',
+        '--assignees',
+        default=[],
+        nargs='*',
+        help='users to assign to this issue'
+    )
+    parser.add_argument(
+        '-b',
+        '--body',
+        default=None,
+        help='text body of the issue'
+    )
+    parser.add_argument(
+        '-c',
+        '--column',
+        default=DEFAULT_COLUMN_NAME,
+        help='name of column to place card in'
+    )
+    parser.add_argument(
+        '-l',
+        '--labels',
+        default=None,
+        nargs='*',
+        help='labels to add to the new issue'
+    )
+    parser.add_argument(
+        '-m',
+        '--milestone',
+        default=None,
+        help='milestone id to place this issue in. '
+             'This should be an integer. '
+             'Find milestone ids with the `milestones` command.'
+    )
+    parser.add_argument(
+        '-p',
+        '--project',
+        default=SCRUM_BOARD_NAME,
+        help='project to create issue in'
+    )
+    parser.add_argument(
+        'title',
+        default=None,
+        help='issue title'
+    )
+
+    args = parser.parse_args()
+
+    session = GithubSession()
+
+    # only required arg for creating an issue
+    title = args.title
+
+    additional_args = {
+        'assignees': args.assignees,
+        'body': args.body,
+        'labels': args.labels,
+        'milestone': args.milestone,
+    }
+
+    issue = session.create_issue(title, **additional_args)
+
+    column_name = args.column
+    project_name = args.project
+
+    project = session.get_project(project_name)
+    column = session.get_column(project, column_name)
+
+    # finally, create the card
+    session.create_card(column, issue)
+
 
 def get_issue(issue_number):
     """
@@ -337,6 +415,7 @@ def projects():
 
     command_fn(args)
 
+
 def projects_clone(args):
     session = GithubSession()
 
@@ -477,3 +556,13 @@ def projects_columns_print(args, session, column_name, project):
             print(json.dumps(_column, indent=4))
         else:
             print(_column['name'])
+
+
+def milestones():
+
+    session = GithubSession()
+
+    display_pairs = sorted([(m.get("number"), m.get("title")) for m in session.get_milestones()], key=lambda x: x[1])
+
+    for pair in display_pairs:
+        print(f'{pair[0]} {pair[1]}')
