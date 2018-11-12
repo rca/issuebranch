@@ -10,3 +10,4 @@ requests = "*"
 sh = "*"
 
 [dev-packages]
+tag-version = "*"
