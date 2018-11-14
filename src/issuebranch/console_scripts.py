@@ -225,7 +225,9 @@ def issue_branch():
         try:
             prefix = issue.get_prefix()
         except issue.PrefixError:
-            changetypes = sorted([x for x in issue.get_labels() if x['name'].startswith('changetype:')], key=lambda x: x['name'])
+            changetypes = sorted(
+                [x for x in issue.get_labels() if x['name'].startswith('changetype:')], key=lambda x: x['name']
+            )
             print('no changetype found; select which one to use:')
 
             for idx, _changetype in enumerate(changetypes):
