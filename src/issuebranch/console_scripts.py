@@ -16,6 +16,7 @@ import sys
 from slugify import slugify
 
 from issuebranch.backends.github import GithubSession, HTTPError
+from issuebranch.shell import run_command
 from issuebranch.settings import SCRUM_BOARD_NAME, DEFAULT_COLUMN_NAME
 
 DEFAULT_BASE_BRANCH = 'origin/master'
@@ -198,9 +199,8 @@ def get_issue(issue_number):
 
 
 def make_branch(name, base):
-    command_l = 'git checkout -b {} {}'.format(name, base).split()
+    run_command('git checkout -b {} {}'.format(name, base))
 
-    getattr(sh, command_l[0])(*command_l[1:])
 
 
 def issue_branch():
