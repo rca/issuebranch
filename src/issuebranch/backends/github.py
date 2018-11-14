@@ -396,6 +396,14 @@ class GithubSession(object):
         return self.request('post', url, json=data)
 
     @property
+    def owner(self):
+        return ISSUE_BACKEND_USER
+
+    @property
+    def repo(self):
+        return ISSUE_BACKEND_REPO
+
+    @property
     @lru_cache()
     def projects(self):
         full_url = self.get_full_url(PROJECTS_ENDPOINT, owner=ISSUE_BACKEND_REPO)

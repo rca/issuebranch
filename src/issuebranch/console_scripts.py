@@ -16,6 +16,7 @@ import sys
 from slugify import slugify
 
 from issuebranch.backends.github import GithubSession, HTTPError
+from issuebranch.shell import run_command
 from issuebranch.settings import SCRUM_BOARD_NAME, DEFAULT_COLUMN_NAME
 
 DEFAULT_BASE_BRANCH = 'origin/master'
@@ -198,9 +199,24 @@ def get_issue(issue_number):
 
 
 def make_branch(name, base):
-    command_l = 'git checkout -b {} {}'.format(name, base).split()
+    run_command('git checkout -b {} {}'.format(name, base))
 
-    getattr(sh, command_l[0])(*command_l[1:])
+
+def make_pull_request(issue, upstream=None):
+    """
+    Injects an empty commit and opens a pull_request
+    """
+    run_command('git commit --allow-empty -m "Open Pull Request"')
+
+    push_command = 'git push -u'
+    if upstream:
+        push_command += ' {}' .format(upstream)
+
+    run_command(push_command)
+
+    # Open the actual pull request
+    message = 'WIP: {}\n\nImplements {}/{}#{}'.format(issue.subject, issue.owner, issue.repo, issue.issue_number)
+    run_command('hub pull-request -o -m "{}" --edit'.format(message), _fg=True)
 
 
 def issue_branch():
@@ -211,6 +227,8 @@ def issue_branch():
         help=f'base branch to make this branch from, default {DEFAULT_BASE_BRANCH}'
     )
     parser.add_argument('--prefix', help='branch prefix, e.g. feature, bugfix, etc.')
+    parser.add_argument('--pull-request', '--pr', action='store_true', help='open a pull request seeded with an empty commit')
+    parser.add_argument('--upstream', '-u', help='the remote to push the branch for creating pull requests')
     parser.add_argument('--subject', help='provide subject text instead of fetching')
     parser.add_argument('issue_number', type=int, help='the issue tracker\'s issue number')
 
@@ -268,6 +286,10 @@ def issue_branch():
         print('Unable to move card to the active column, is it in triage?')
 
     make_branch(slug, base)
+
+    # open a pull-request
+    if args.pull_request:
+        make_pull_request(issue, upstream=args.upstream)
 
 
 def issue_close_done():
