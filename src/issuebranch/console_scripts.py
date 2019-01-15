@@ -187,6 +187,8 @@ def issue_create():
     # finally, create the card
     session.create_card(column, issue)
 
+    print(json.dumps(issue, indent=2))
+
 
 def get_issue(issue_number):
     """
