@@ -24,6 +24,8 @@ MAX_SLUG_LENGTH = 32
 
 SUBJECT_EXCLUDE_RE = re.compile(r'[/]')
 
+ISSUE_BRANCH_FORMAT = re.compile(r'(?P<changetype>[^/]+)/(?P<issue_number>\d+)-(?P<slug>.*)')
+
 
 class ProjectError(Exception):
     pass
@@ -237,11 +239,35 @@ def issue_branch():
     parser.add_argument('--pull-request', '--pr', action='store_true', help='open a pull request seeded with an empty commit')
     parser.add_argument('--upstream', '-u', help='the remote to push the branch for creating pull requests')
     parser.add_argument('--subject', help='provide subject text instead of fetching')
-    parser.add_argument('issue_number', type=int, help='the issue tracker\'s issue number')
+    parser.add_argument('issue_number', type=int, nargs='?', help='the issue tracker\'s issue number')
 
     args = parser.parse_args()
 
+    is_issue_branch = False
     issue_number = args.issue_number
+    if not issue_number:
+        result = run_command('git branch --no-color')
+        for line in result.splitlines():
+            if not line:
+                continue
+
+            if line[0] != '*':
+                continue
+
+            branch = line.split(' ', 1)[-1].strip()
+
+            # we are already on an issue-branch
+            is_issue_branch = True
+
+            break
+        else:
+            return 'need an issue number from branch if no number is given as an arg'
+
+        matches = ISSUE_BRANCH_FORMAT.match(branch)
+        if matches:
+            issue_number = matches.group('issue_number')
+        else:
+            return 'need an issue number as an arg'
 
     issue = get_issue(issue_number)
 
@@ -250,7 +276,11 @@ def issue_branch():
 
     # open a pull-request
     if args.pull_request:
-        make_pull_request(issue, upstream=args.upstream)
+        # create an empty commit when not already on an issue branch
+        # presumably if the issue branch is already created, commits have been made
+        empty_commit = not is_issue_branch
+
+        make_pull_request(issue, upstream=args.upstream, empty_commit=empty_commit)
 
 
 def make_issue_branch(args, issue):
