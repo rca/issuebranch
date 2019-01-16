@@ -327,11 +327,7 @@ def make_issue_branch(args, issue):
 
         base = proc(*command_l[1:]).stdout.decode('utf8').strip()
 
-    # move this issue to the active column
-    try:
-        issue_column(['issue_column', SCRUM_BOARD_NAME, issue_number, 'active'])
-    except:
-        print('Unable to move card to the active column, is it in triage?')
+    move_card_column(issue_number, 'active')
 
     make_branch(slug, base)
 
@@ -488,6 +484,21 @@ def issue_show():
     issue_data = issue.issue
 
     print(json.dumps(issue_data, indent=4))
+
+
+def move_card_column(issue_number: int, column: str):
+    """
+    Moves the card for the given issue number to the specified column
+
+    Args:
+        issue_number: the issue's number
+        column: the name of the column
+    """
+    # move this issue to the active column
+    try:
+        issue_column(['issue_column', SCRUM_BOARD_NAME, issue_number, column])
+    except:
+        print('Unable to move card to the active column, is it in triage?')
 
 
 def projects():
