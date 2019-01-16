@@ -24,6 +24,8 @@ MAX_SLUG_LENGTH = 32
 
 SUBJECT_EXCLUDE_RE = re.compile(r'[/]')
 
+ISSUE_BRANCH_FORMAT = re.compile(r'(?P<changetype>[^/]+)/(?P<issue_number>\d+)-(?P<slug>.*)')
+
 
 class ProjectError(Exception):
     pass
@@ -204,11 +206,16 @@ def make_branch(name, base):
     run_command('git checkout -b {} {}'.format(name, base))
 
 
-def make_pull_request(issue, upstream=None):
+def make_pull_request(issue, upstream=None, empty_commit=True):
     """
     Injects an empty commit and opens a pull_request
     """
-    run_command('git commit --allow-empty -m "Open Pull Request"')
+    if empty_commit:
+        run_command('git commit --allow-empty -m "Open Pull Request"')
+
+        subject = 'WIP: {}'.format(issue.subject)
+    else:
+        subject = issue.subject
 
     push_command = 'git push -u'
     if upstream:
@@ -217,7 +224,7 @@ def make_pull_request(issue, upstream=None):
     run_command(push_command)
 
     # Open the actual pull request
-    message = 'WIP: {}\n\nImplements {}/{}#{}'.format(issue.subject, issue.owner, issue.repo, issue.issue_number)
+    message = '{}\n\nResolves {}/{}#{}'.format(subject, issue.owner, issue.repo, issue.issue_number)
     run_command('hub pull-request -o -m "{}" --edit'.format(message), _fg=True)
 
 
@@ -232,14 +239,51 @@ def issue_branch():
     parser.add_argument('--pull-request', '--pr', action='store_true', help='open a pull request seeded with an empty commit')
     parser.add_argument('--upstream', '-u', help='the remote to push the branch for creating pull requests')
     parser.add_argument('--subject', help='provide subject text instead of fetching')
-    parser.add_argument('issue_number', type=int, help='the issue tracker\'s issue number')
+    parser.add_argument('issue_number', type=int, nargs='?', help='the issue tracker\'s issue number')
 
     args = parser.parse_args()
 
+    is_issue_branch = False
     issue_number = args.issue_number
+    if not issue_number:
+        result = run_command('git branch --no-color')
+        for line in result.splitlines():
+            if not line:
+                continue
+
+            if line[0] != '*':
+                continue
+
+            branch = line.split(' ', 1)[-1].strip()
+
+            # we are already on an issue-branch
+            is_issue_branch = True
+
+            break
+        else:
+            return 'need an issue number from branch if no number is given as an arg'
+
+        matches = ISSUE_BRANCH_FORMAT.match(branch)
+        if matches:
+            issue_number = matches.group('issue_number')
+        else:
+            return 'need an issue number as an arg'
 
     issue = get_issue(issue_number)
 
+    if not is_issue_branch:
+        make_issue_branch(args, issue)
+
+    # open a pull-request
+    if args.pull_request:
+        # create an empty commit when not already on an issue branch
+        # presumably if the issue branch is already created, commits have been made
+        empty_commit = not is_issue_branch
+
+        make_pull_request(issue, upstream=args.upstream, empty_commit=empty_commit)
+
+
+def make_issue_branch(args, issue):
     prefix = args.prefix
     if not prefix:
         try:
@@ -288,10 +332,6 @@ def issue_branch():
         print('Unable to move card to the active column, is it in triage?')
 
     make_branch(slug, base)
-
-    # open a pull-request
-    if args.pull_request:
-        make_pull_request(issue, upstream=args.upstream)
 
 
 def issue_close_done():
