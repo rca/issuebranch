@@ -240,6 +240,15 @@ def issue_branch():
 
     issue = get_issue(issue_number)
 
+    if not is_issue_branch:
+        make_issue_branch(args, issue)
+
+    # open a pull-request
+    if args.pull_request:
+        make_pull_request(issue, upstream=args.upstream)
+
+
+def make_issue_branch(args, issue):
     prefix = args.prefix
     if not prefix:
         try:
@@ -288,10 +297,6 @@ def issue_branch():
         print('Unable to move card to the active column, is it in triage?')
 
     make_branch(slug, base)
-
-    # open a pull-request
-    if args.pull_request:
-        make_pull_request(issue, upstream=args.upstream)
 
 
 def issue_close_done():
