@@ -284,6 +284,8 @@ def issue_branch():
 
 
 def make_issue_branch(args, issue):
+    issue_number = issue.issue_number
+
     prefix = args.prefix
     if not prefix:
         try:
