@@ -253,6 +253,14 @@ def issue_branch():
     parser.add_argument('--prefix', help='branch prefix, e.g. feature, bugfix, etc.')
     parser.add_argument('--pull-request', '--pr', action='store_true', help='open a pull request seeded with an empty commit')
     parser.add_argument('--upstream', '-u', help='the remote to push the branch for creating pull requests')
+    parser.add_argument(
+        '--no-resolves', action='store_false', dest='resolves',
+        help='used with pull request to indicate the PR does not close the issue'
+    )
+    parser.add_argument(
+        '--no-move-card', action='store_false', dest='move_card',
+        help='used with pull request to indicate the card on the Kanban Board should stay where it is'
+    )
     parser.add_argument('--subject', help='provide subject text instead of fetching')
     parser.add_argument('issue_number', type=int, nargs='?', help='the issue tracker\'s issue number')
 
@@ -295,7 +303,10 @@ def issue_branch():
         # presumably if the issue branch is already created, commits have been made
         empty_commit = not is_issue_branch
 
-        make_pull_request(issue, upstream=args.upstream, empty_commit=empty_commit)
+        make_pull_request(
+            issue, upstream=args.upstream, empty_commit=empty_commit,
+            resolves_issue=args.resolves, move_card=args.move_card
+        )
 
 
 def make_issue_branch(args, issue):
@@ -342,7 +353,8 @@ def make_issue_branch(args, issue):
 
         base = proc(*command_l[1:]).stdout.decode('utf8').strip()
 
-    move_card_column(issue_number, 'active')
+    if args.move_card:
+        move_card_column(issue_number, 'active')
 
     make_branch(slug, base)
 
