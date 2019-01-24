@@ -206,9 +206,16 @@ def make_branch(name, base):
     run_command('git checkout -b {} {}'.format(name, base))
 
 
-def make_pull_request(issue, upstream=None, empty_commit=True):
+def make_pull_request(issue, upstream=None, empty_commit=True, move_card=True, resolves_issue=True):
     """
     Injects an empty commit and opens a pull_request
+
+    Args:
+        issue: an issue object
+        upstream: the upstream to push the current branch to
+        empty_commit: whether to make a placeholder empty commit
+        move_card: whether to move the card on the Kanban Board
+        resolves_issue: when this PR is merged automatically close the referenced issue.
     """
     if empty_commit:
         run_command('git commit --allow-empty -m "Open Pull Request"')
@@ -223,9 +230,17 @@ def make_pull_request(issue, upstream=None, empty_commit=True):
 
     run_command(push_command)
 
+    if resolves_issue:
+        action = 'Resolves'
+    else:
+        action = 'Contributes to'
+
     # Open the actual pull request
-    message = '{}\n\nResolves {}/{}#{}'.format(subject, issue.owner, issue.repo, issue.issue_number)
+    message = '{}\n\n{} {}/{}#{}'.format(subject, action, issue.owner, issue.repo, issue.issue_number)
     run_command('hub pull-request -o -m "{}" --edit'.format(message), _fg=True)
+
+    if move_card:
+        move_card_column(issue.issue_number, 'feedback')
 
 
 def issue_branch():
@@ -238,6 +253,14 @@ def issue_branch():
     parser.add_argument('--prefix', help='branch prefix, e.g. feature, bugfix, etc.')
     parser.add_argument('--pull-request', '--pr', action='store_true', help='open a pull request seeded with an empty commit')
     parser.add_argument('--upstream', '-u', help='the remote to push the branch for creating pull requests')
+    parser.add_argument(
+        '--no-resolves', action='store_false', dest='resolves',
+        help='used with pull request to indicate the PR does not close the issue'
+    )
+    parser.add_argument(
+        '--no-move-card', action='store_false', dest='move_card',
+        help='used with pull request to indicate the card on the Kanban Board should stay where it is'
+    )
     parser.add_argument('--subject', help='provide subject text instead of fetching')
     parser.add_argument('issue_number', type=int, nargs='?', help='the issue tracker\'s issue number')
 
@@ -280,7 +303,10 @@ def issue_branch():
         # presumably if the issue branch is already created, commits have been made
         empty_commit = not is_issue_branch
 
-        make_pull_request(issue, upstream=args.upstream, empty_commit=empty_commit)
+        make_pull_request(
+            issue, upstream=args.upstream, empty_commit=empty_commit,
+            resolves_issue=args.resolves, move_card=args.move_card
+        )
 
 
 def make_issue_branch(args, issue):
@@ -327,11 +353,8 @@ def make_issue_branch(args, issue):
 
         base = proc(*command_l[1:]).stdout.decode('utf8').strip()
 
-    # move this issue to the active column
-    try:
-        issue_column(['issue_column', SCRUM_BOARD_NAME, issue_number, 'active'])
-    except:
-        print('Unable to move card to the active column, is it in triage?')
+    if args.move_card:
+        move_card_column(issue_number, 'active')
 
     make_branch(slug, base)
 
@@ -488,6 +511,21 @@ def issue_show():
     issue_data = issue.issue
 
     print(json.dumps(issue_data, indent=4))
+
+
+def move_card_column(issue_number: int, column: str):
+    """
+    Moves the card for the given issue number to the specified column
+
+    Args:
+        issue_number: the issue's number
+        column: the name of the column
+    """
+    # move this issue to the active column
+    try:
+        issue_column(['issue_column', SCRUM_BOARD_NAME, issue_number, column])
+    except:
+        print('Unable to move card to the {} column, is it in triage?'.format(column))
 
 
 def projects():

@@ -246,7 +246,9 @@ class GithubSession(object):
 
         for column in self.get_columns(project):
             for card in self.get_cards(column):
-                if card['content_url'] == issue_url:
+                # use .get() here to prevent blowing up when encountering a note
+                # which does not contain a content_url key
+                if card.get('content_url') == issue_url:
                     return card
         else:
             raise CardError(f'Unable to find card for issue {issue_url}')
@@ -290,6 +292,16 @@ class GithubSession(object):
         full_url = f'{ISSUE_BACKEND_URL}{endpoint}'.format(**format_args)
 
         return full_url
+
+    def get_issue(self, issue_number):
+        full_url = self.get_full_url(
+            ISSUE_BACKEND_ENDPOINT,
+            owner=ISSUE_BACKEND_USER,
+            repo=ISSUE_BACKEND_REPO,
+            issue=issue_number
+        )
+
+        return self.request('get', full_url).json()
 
     def get_issues(self, **filters):
         """
@@ -460,14 +472,7 @@ class Backend(BaseBackend, GithubSession):
     @property
     @lru_cache()
     def issue(self):
-        full_url = self.get_full_url(
-            ISSUE_BACKEND_ENDPOINT,
-            owner=ISSUE_BACKEND_USER,
-            repo=ISSUE_BACKEND_REPO,
-            issue=self.issue_number
-        )
-
-        return self.request('get', full_url).json()
+        return self.get_issue(self.issue_number)
 
     def get_prefix(self, changetype=None):
         """
