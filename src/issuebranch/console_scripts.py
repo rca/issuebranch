@@ -501,7 +501,7 @@ def move_card_column(issue_number: int, column: str):
     try:
         issue_column(['issue_column', SCRUM_BOARD_NAME, issue_number, column])
     except:
-        print('Unable to move card to the active column, is it in triage?')
+        print('Unable to move card to the {} column, is it in triage?'.format(column))
 
 
 def projects():
