@@ -209,6 +209,13 @@ def make_branch(name, base):
 def make_pull_request(issue, upstream=None, empty_commit=True, move_card=True):
     """
     Injects an empty commit and opens a pull_request
+
+    Args:
+        issue: an issue object
+        upstream: the upstream to push the current branch to
+        empty_commit: whether to make a placeholder empty commit
+        move_card: whether to move the card on the Kanban Board
+        resolves_issue: when this PR is merged automatically close the referenced issue.
     """
     if empty_commit:
         run_command('git commit --allow-empty -m "Open Pull Request"')
