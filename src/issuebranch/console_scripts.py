@@ -206,7 +206,7 @@ def make_branch(name, base):
     run_command('git checkout -b {} {}'.format(name, base))
 
 
-def make_pull_request(issue, upstream=None, empty_commit=True, move_card=True):
+def make_pull_request(issue, upstream=None, empty_commit=True, move_card=True, resolves_issue=True):
     """
     Injects an empty commit and opens a pull_request
 
@@ -230,8 +230,13 @@ def make_pull_request(issue, upstream=None, empty_commit=True, move_card=True):
 
     run_command(push_command)
 
+    if resolves_issue:
+        action = 'Resolves'
+    else:
+        action = 'Contributes to'
+
     # Open the actual pull request
-    message = '{}\n\nResolves {}/{}#{}'.format(subject, issue.owner, issue.repo, issue.issue_number)
+    message = '{}\n\n{} {}/{}#{}'.format(subject, action, issue.owner, issue.repo, issue.issue_number)
     run_command('hub pull-request -o -m "{}" --edit'.format(message), _fg=True)
 
     if move_card:
