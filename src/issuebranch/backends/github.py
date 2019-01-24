@@ -246,7 +246,9 @@ class GithubSession(object):
 
         for column in self.get_columns(project):
             for card in self.get_cards(column):
-                if card['content_url'] == issue_url:
+                # use .get() here to prevent blowing up when encountering a note
+                # which does not contain a content_url key
+                if card.get('content_url') == issue_url:
                     return card
         else:
             raise CardError(f'Unable to find card for issue {issue_url}')
