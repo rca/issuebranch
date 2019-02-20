@@ -1,0 +1,52 @@
+#!/usr/bin/env python3
+import argparse
+import datetime
+import sh
+import shlex
+
+PROJECTS_CLEAR_COMMAND = "projects '{board}' columns done --clear"
+PROJECTS_CLONE_COMMAND = "projects '{board}' clone '{board} {date}'"
+
+class Command:
+    def __init__(self, board, clean_done=True):
+        self.board = board
+        self.clean_done = clean_done
+
+    def run(self):
+        now = datetime.datetime.now()
+        date_s = now.strftime('%Y-%m-%d')
+
+        command_s = PROJECTS_CLONE_COMMAND.format(board=self.board, date=date_s)
+        print(command_s)
+
+        command_split = shlex.split(command_s)
+
+        command = getattr(sh, command_split[0])
+        command(*command_split[1:])
+
+        if self.clean_done:
+            command_s = PROJECTS_CLEAR_COMMAND.format(board=self.board)
+            print(command_s)
+
+            command_split = shlex.split(command_s)
+
+            command = getattr(sh, command_split[0])
+            command(*command_split[1:])
+
+
+def get_args():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('board', help='name of the board to clone')
+    parser.add_argument(
+        '--no-clean-done', action='store_false', dest='clean_done',
+        help='do not clean the done column'
+    )
+
+    return parser.parse_args()
+
+
+if __name__ == '__main__':
+    args = get_args()
+
+    Command(args.board, clean_done=args.clean_done).run()
