@@ -15,6 +15,7 @@ import sys
 
 from slugify import slugify
 
+from issuebranch import utils
 from issuebranch.backends.github import GithubSession, HTTPError
 from issuebranch.shell import run_command
 from issuebranch.settings import SCRUM_BOARD_NAME, DEFAULT_COLUMN_NAME
@@ -535,6 +536,9 @@ def projects():
 
     subcommands = parser.add_subparsers(dest="subcommand")
 
+    backlog_parser = subcommands.add_parser('backlog')
+    backlog_parser.add_argument('kanban_board', help='the kanban board to put the cards into')
+
     clone_parser = subcommands.add_parser('clone')
     clone_parser.add_argument('new_name', help='name of the new project')
     clone_parser.add_argument('--no-cards', action='store_false', dest='cards', help='do not clone cards')
@@ -552,6 +556,36 @@ def projects():
 
     command_fn(args)
 
+
+def projects_backlog(args):
+    """
+    Copies backlog grooming column from one board to another
+
+    For example, the following command will look for a board named
+    "TEAM - DE" and will copy all the cards in the "backlog grooming"
+    column over to the board named "kanban board":
+
+    projects 'TEAM - DE' backlog 'kanban board'
+    """
+    session = GithubSession()
+
+    print(f'copy backlog from {args.name} to {args.kanban_board}')
+
+    core_engineering_board = session.get_project(args.name)
+    core_engineering_backlog_grooming = session.get_column(core_engineering_board, 'backlog grooming')
+
+    kanban_board = session.get_project(args.kanban_board)
+    kanban_board_backlog_grooming = session.get_column(kanban_board, 'backlog grooming')
+
+    cards = list(session.get_cards(core_engineering_backlog_grooming))
+
+    for card_data in cards:
+        issue_number = utils.get_issue_number_from_card_data(card_data)
+
+        print(issue_number)
+
+        issue_data = session.get_issue(issue_number)
+        session.create_card(kanban_board_backlog_grooming, issue_data)
 
 def projects_clone(args):
     session = GithubSession()
