@@ -539,6 +539,10 @@ def projects():
     backlog_parser = subcommands.add_parser('backlog')
     backlog_parser.add_argument('kanban_board', help='the kanban board to put the cards into')
 
+    backlog_parser = subcommands.add_parser('label')
+    backlog_parser.add_argument('--team', help='the team label to add to the issues')
+    backlog_parser.add_argument('column', help='the column to get cards from')
+
     clone_parser = subcommands.add_parser('clone')
     clone_parser.add_argument('new_name', help='name of the new project')
     clone_parser.add_argument('--no-cards', action='store_false', dest='cards', help='do not clone cards')
@@ -586,6 +590,46 @@ def projects_backlog(args):
 
         issue_data = session.get_issue(issue_number)
         session.create_card(kanban_board_backlog_grooming, issue_data)
+
+def projects_label(args):
+    """
+    Labels the cards in the project's column
+
+    A label for the project is added to the card
+
+    optionally, a team label is added if a team is given
+    """
+    session = GithubSession()
+
+    label_datas = list(session.get_labels())
+
+    team = args.team
+    team_label_data = None
+    if team:
+        team_label = utils.get_label(team, prefix='team')
+        team_label_data = [x for x in label_datas if x['name'] == team_label][0]
+
+    # get the project label
+    project_label = utils.get_label(args.name, prefix='project')
+    project_label_data = [x for x in label_datas if x['name'] == project_label][0]
+
+    print(f'label cards in project {args.name} column {args.column}')
+
+    project_board = session.get_project(args.name)
+    project_backlog_grooming = session.get_column(project_board, 'backlog grooming')
+
+    cards = list(session.get_cards(project_backlog_grooming))
+    for card_data in cards:
+        issue_number = utils.get_issue_number_from_card_data(card_data)
+
+        print(issue_number)
+
+        # add the project label
+        session.add_label(project_label_data, number=issue_number)
+
+        if team_label_data:
+            session.add_label(team_label_data, number=issue_number)
+
 
 def projects_clone(args):
     session = GithubSession()
