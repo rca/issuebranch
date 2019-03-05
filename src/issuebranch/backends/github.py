@@ -188,9 +188,13 @@ class GithubSession(object):
 
         return self.request('post', url, json=data).json()
 
-    def create_label(self, name, color):
+    def create_label(self, name: str, color: str):
         """
         Creates a label in the user/repo data from the environent
+
+        Args:
+            name: the label name
+            color: the hexcolor _without_ pound sign
         """
         url = self.get_full_url(
             LABELS_CREATE_ENDPOINT,
