@@ -1,4 +1,60 @@
+import re
+
 from issuebranch.backends.github import GithubSession
+
+
+LABEL_RE = re.compile(r'[^0-9a-z ]', flags=re.IGNORECASE)
+
+
+def get_issue_number_from_card_data(card_data: dict) -> int:
+    """
+    Returns the issue number from the given card data
+
+    Can be None if the card is a note or some other non-issue card
+
+    Args:
+        card_data: the card data returned by the GH API
+
+    Returns:
+        Issue number or None
+    """
+    content_url = card_data.get('content_url')
+    if not content_url:
+        return
+
+    issue_number = content_url.rsplit('/', 1)[-1]
+
+    return int(issue_number)
+
+
+def get_label(buf: str, prefix: str = None) -> str:
+    """
+    Returns a label
+
+    For example, the string 'TEAM - Core Engineering' should return 'team:core_engineering'
+
+    Args:
+        buf: the original string
+        prefix: a label prefix if the label should have one
+
+    Returns:
+        str
+    """
+    lower_buf = LABEL_RE.sub('', buf).lower()
+    lower_buf_split = lower_buf.split()
+
+    if prefix:
+        # remove the first element if it is the prefix
+        if lower_buf_split[0] == prefix:
+            lower_buf_split.pop(0)
+
+    underscored = '_'.join(lower_buf_split)
+
+    label = underscored
+    if prefix:
+        label = f'{prefix}:{label}'
+
+    return label
 
 
 def label_milestone_issues():
