@@ -586,10 +586,13 @@ def projects_backlog(args):
     for card_data in cards:
         issue_number = utils.get_issue_number_from_card_data(card_data)
 
-        print(issue_number)
+        try:
+            print(issue_number)
 
-        issue_data = session.get_issue(issue_number)
-        session.create_card(kanban_board_backlog_grooming, issue_data)
+            issue_data = session.get_issue(issue_number)
+            session.create_card(kanban_board_backlog_grooming, issue_data)
+        except Exception as exc:
+            print(f'unable to move {issue_number}')
 
 def projects_label(args):
     """
