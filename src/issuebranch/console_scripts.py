@@ -39,7 +39,10 @@ def get_points(labels: list) -> Decimal:
             if ':' not in name:
                 break
 
-            points = Decimal(name.rsplit(':', 1)[-1])
+            try:
+                points = Decimal(name.rsplit(':', 1)[-1])
+            except:
+                print(f'unable to get points for {name}', file=sys.stderr)
 
             break
 
