@@ -13,8 +13,11 @@ import sh
 import shlex
 import sys
 
+from decimal import Decimal
+
 from slugify import slugify
 
+from issuebranch import utils
 from issuebranch.backends.github import GithubSession, HTTPError
 from issuebranch.shell import run_command
 from issuebranch.settings import SCRUM_BOARD_NAME, DEFAULT_COLUMN_NAME
@@ -25,6 +28,40 @@ MAX_SLUG_LENGTH = 32
 SUBJECT_EXCLUDE_RE = re.compile(r'[/]')
 
 ISSUE_BRANCH_FORMAT = re.compile(r'(?P<changetype>[^/]+)/(?P<issue_number>\d+)-(?P<slug>.*)')
+
+
+def get_points(labels: list) -> Decimal:
+    points = None
+
+    for label in labels:
+        name = label.get('name')
+        if name.startswith('points'):
+            if ':' not in name:
+                break
+
+            value = name.rsplit(':', 1)[-1]
+            if value.lower() != 'nan':
+                try:
+                    points = Decimal(value)
+                except:
+                    print(f'unable to get points for {name}', file=sys.stderr)
+
+            break
+
+    return points
+
+
+def is_walk_in(labels: list) -> bool:
+    _is_walk_in = False
+
+    for label in labels:
+        name = label.get('name')
+        if 'walk-in' in name:
+            _is_walk_in = True
+
+            break
+
+    return _is_walk_in
 
 
 class ProjectError(Exception):
@@ -535,6 +572,16 @@ def projects():
 
     subcommands = parser.add_subparsers(dest="subcommand")
 
+    copy_column_parser = subcommands.add_parser('copy_column')
+    copy_column_parser.add_argument('column', help='the column to get cards from')
+    copy_column_parser.add_argument('kanban_board', help='the kanban board to put the cards into')
+
+    count_parser = subcommands.add_parser('count')
+
+    label_parser = subcommands.add_parser('label')
+    label_parser.add_argument('--team', help='the team label to add to the issues')
+    label_parser.add_argument('column', help='the column to get cards from')
+
     clone_parser = subcommands.add_parser('clone')
     clone_parser.add_argument('new_name', help='name of the new project')
     clone_parser.add_argument('--no-cards', action='store_false', dest='cards', help='do not clone cards')
@@ -551,6 +598,154 @@ def projects():
     command_fn = globals()[command_fn_name]
 
     command_fn(args)
+
+
+def projects_copy_column(args):
+    """
+    Copies backlog grooming column from one board to another
+
+    For example, the following command will look for a board named
+    "TEAM - DE" and will copy all the cards in the "backlog grooming"
+    column over to the board named "kanban board":
+
+    projects 'TEAM - DE' backlog 'kanban board'
+    """
+    session = GithubSession()
+
+    column = args.column
+
+    print(f'copy {column} from {args.name} to {args.kanban_board}')
+
+    core_engineering_board = session.get_project(args.name)
+    core_engineering_backlog_grooming = session.get_column(core_engineering_board, column)
+
+    kanban_board = session.get_project(args.kanban_board)
+    kanban_board_backlog_grooming = session.get_column(kanban_board, column)
+
+    cards = list(session.get_cards(core_engineering_backlog_grooming))
+
+    for card_data in cards:
+        issue_number = utils.get_issue_number_from_card_data(card_data)
+
+        try:
+            print(issue_number)
+
+            issue_data = session.get_issue(issue_number)
+            session.create_card(kanban_board_backlog_grooming, issue_data)
+        except Exception as exc:
+            print(f'unable to move {issue_number}')
+
+
+def projects_count(args):
+    """
+    Counts cards and points
+    """
+    session = GithubSession()
+
+    print(f'counting {args.name}')
+
+    board = session.get_project(args.name)
+
+    tally = []
+
+    columns = session.get_columns(board)
+    for column in columns:
+        print(column['name'], file=sys.stderr)
+
+        cards = list(session.get_cards(column))
+
+        total = Decimal(0)
+        unpointed = 0
+        num_cards = 0
+        num_walk_ins = 0
+        issues = []
+        walk_ins = []
+        walk_in_points = 0
+
+        for card_data in cards:
+            issue_number = utils.get_issue_number_from_card_data(card_data)
+
+            issue_data = session.get_issue(issue_number)
+            labels = issue_data['labels']
+
+            num_cards += 1
+
+            points = get_points(labels)
+            if points:
+                total += points
+            else:
+                unpointed += 1
+
+            issue_data = {
+                'issue_number': issue_number,
+                'points': str(points),
+                'unpointed': points is None,
+                'walk_in': False,
+            }
+
+            if is_walk_in(labels):
+                num_walk_ins += 1
+                if points:
+                    walk_in_points += points
+
+                issue_data['walk_in'] = True
+
+                walk_ins.append(issue_data)
+
+            issues.append(issue_data)
+
+        tally.append({
+            'column': column['name'],
+            # 'issues': issues,
+            'num_cards': num_cards,
+            'num_walk_ins': num_walk_ins,
+            'walk_in_points': str(walk_in_points),
+            # 'walk_ins': walk_ins,
+            'total_points': str(total),
+            'unpointed': unpointed,
+        })
+
+    print(json.dumps(tally, indent=4))
+
+
+def projects_label(args):
+    """
+    Labels the cards in the project's column
+
+    A label for the project is added to the card
+
+    optionally, a team label is added if a team is given
+    """
+    session = GithubSession()
+
+    label_datas = list(session.get_labels())
+
+    team = args.team
+    team_label_data = None
+    if team:
+        team_label = utils.get_label(team, prefix='team')
+        team_label_data = [x for x in label_datas if x['name'] == team_label][0]
+
+    # get the project label
+    project_label = utils.get_label(args.name, prefix='project')
+    project_label_data = [x for x in label_datas if x['name'] == project_label][0]
+
+    print(f'label cards in project {args.name} column {args.column}')
+
+    project_board = session.get_project(args.name)
+    project_backlog_grooming = session.get_column(project_board, 'backlog grooming')
+
+    cards = list(session.get_cards(project_backlog_grooming))
+    for card_data in cards:
+        issue_number = utils.get_issue_number_from_card_data(card_data)
+
+        print(issue_number)
+
+        # add the project label
+        session.add_label(project_label_data, number=issue_number)
+
+        if team_label_data:
+            session.add_label(team_label_data, number=issue_number)
 
 
 def projects_clone(args):

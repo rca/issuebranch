@@ -16,10 +16,10 @@ CARD_MOVE_ENDPOINT = CARD_ENDPOINT + '/moves'
 COLUMN_DELETE_ENDPOINT = '/projects/columns/{id}'
 COLUMN_MOVE_ENDPOINT = '/projects/columns/{id}/moves'
 
-ISSUE_BACKEND_API_KEY = os.environ['ISSUE_BACKEND_API_KEY']
-ISSUE_BACKEND_REPO = os.environ['ISSUE_BACKEND_REPO']
+ISSUE_BACKEND_API_KEY = os.environ.get('ISSUE_BACKEND_API_KEY')
+ISSUE_BACKEND_REPO = os.environ.get('ISSUE_BACKEND_REPO')
 ISSUE_BACKEND_URL = 'https://api.github.com'
-ISSUE_BACKEND_USER = os.environ['ISSUE_BACKEND_USER']
+ISSUE_BACKEND_USER = os.environ.get('ISSUE_BACKEND_USER')
 
 ISSUE_LIST_ENDPOINT = '/repos/{owner}/{repo}/issues'
 ISSUE_COMMENT_ENDPOINT = ISSUE_LIST_ENDPOINT + '/{number}/comments'
@@ -188,9 +188,13 @@ class GithubSession(object):
 
         return self.request('post', url, json=data).json()
 
-    def create_label(self, name, color):
+    def create_label(self, name: str, color: str):
         """
         Creates a label in the user/repo data from the environent
+
+        Args:
+            name: the label name
+            color: the hexcolor _without_ pound sign
         """
         url = self.get_full_url(
             LABELS_CREATE_ENDPOINT,
