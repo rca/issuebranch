@@ -649,7 +649,8 @@ def projects_count(args):
 
             if is_walk_in(labels):
                 num_walk_ins += 1
-                walk_in_points += points
+                if points:
+                    walk_in_points += points
 
                 issue_data['walk_in'] = True
 
