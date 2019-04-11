@@ -600,6 +600,42 @@ def projects():
     command_fn(args)
 
 
+def projects_copy_column(args):
+    """
+    Copies backlog grooming column from one board to another
+
+    For example, the following command will look for a board named
+    "TEAM - DE" and will copy all the cards in the "backlog grooming"
+    column over to the board named "kanban board":
+
+    projects 'TEAM - DE' backlog 'kanban board'
+    """
+    session = GithubSession()
+
+    column = args.column
+
+    print(f'copy {column} from {args.name} to {args.kanban_board}')
+
+    core_engineering_board = session.get_project(args.name)
+    core_engineering_backlog_grooming = session.get_column(core_engineering_board, column)
+
+    kanban_board = session.get_project(args.kanban_board)
+    kanban_board_backlog_grooming = session.get_column(kanban_board, column)
+
+    cards = list(session.get_cards(core_engineering_backlog_grooming))
+
+    for card_data in cards:
+        issue_number = utils.get_issue_number_from_card_data(card_data)
+
+        try:
+            print(issue_number)
+
+            issue_data = session.get_issue(issue_number)
+            session.create_card(kanban_board_backlog_grooming, issue_data)
+        except Exception as exc:
+            print(f'unable to move {issue_number}')
+
+
 def projects_count(args):
     """
     Counts cards and points
