@@ -664,6 +664,8 @@ def projects_count(args):
 
         for card_data in cards:
             issue_number = utils.get_issue_number_from_card_data(card_data)
+            if not issue_number:  # must be a note
+                continue
 
             issue_data = session.get_issue(issue_number)
             labels = issue_data['labels']
