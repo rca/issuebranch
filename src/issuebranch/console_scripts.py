@@ -809,7 +809,12 @@ def projects_clone(args):
         print(f'filling {column_name}')
 
         for old_card_data in old_cards:
-            old_content_url = old_card_data['content_url']
+            try:
+                old_content_url = old_card_data['content_url']
+            except KeyError:
+                print(f'skipping {old_card_data}')
+
+                continue
 
             if old_content_url not in new_cards:
                 try:
