@@ -7,6 +7,7 @@ import importlib
 import json
 import os
 import re
+import requests
 import tempfile
 
 import sh
@@ -18,6 +19,7 @@ from decimal import Decimal
 from slugify import slugify
 
 from issuebranch import utils
+from issuebranch.backends import youtrack
 from issuebranch.backends.github import GithubSession, HTTPError
 from issuebranch.shell import run_command
 from issuebranch.settings import SCRUM_BOARD_NAME, DEFAULT_COLUMN_NAME
@@ -237,6 +239,44 @@ def get_issue(issue_number):
     backend_module = importlib.import_module('issuebranch.backends.{}'.format(backend_name))
 
     return getattr(backend_module, 'Backend')(issue_number)
+
+
+def github_to_youtrack():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('issue', type=int, help='the issue number to import into youtrack')
+    parser.add_argument('--subsystem', help='the subsystem to attach the issue to')
+    parser.add_argument('--state', action='store', help='What state to set the issue to, by default it will be the YouTrack default')
+    parser.add_argument('--story', dest='type', action='store_const', const='Story', default='Task', help='Sets type to Story')
+    parser.add_argument('--type', default='Task', help='Sets the type of issue; by default it is set to Task')
+
+    args = parser.parse_args()
+
+    issue_number = args.issue
+    issue_type = args.type
+
+    subsystem = args.subsystem
+    if not subsystem:
+        raise CommandError('subsystem not given')
+
+    session = GithubSession()
+    issue = session.get_issue(issue_number)
+    body = f'{issue["body"]}\n\n[GitHub issue {issue_number}]({issue["html_url"]})'
+    title = f'{issue["title"]} #{issue_number}'
+
+    yt_session = youtrack.Session()
+
+    extra_fields = []
+
+    if args.state:
+        extra_fields.append({
+            'name': 'State',
+            'value': args.state
+        })
+
+    try:
+        response = yt_session.create_issue(issue_type, subsystem, title, body, extra_fields=extra_fields)
+    except requests.HTTPError as exc:
+        return exc.response.text
 
 
 def make_branch(name, base):
