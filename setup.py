@@ -15,6 +15,7 @@ setup(
     entry_points={
         'console_scripts': [
             'backlog-milestone = issuebranch.console_scripts:backlog_milestone',
+            'gh2yt = issuebranch.console_scripts:github_to_youtrack',
             'issue-branch = issuebranch.console_scripts:issue_branch',
             'issue-close-done = issuebranch.console_scripts:issue_close_done',
             'issue-closed = issuebranch.console_scripts:issue_closed',
