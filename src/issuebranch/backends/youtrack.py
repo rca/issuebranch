@@ -5,6 +5,8 @@ from functools import lru_cache
 import requests
 import yaml
 
+from ..exceptions import PrefixError
+
 ISSUE_BACKEND_API_KEY = os.environ.get('YOUTRACK_TOKEN')
 
 YOUTRACK_API_URL = os.environ.get('YOUTRACK_API_URL')
@@ -19,6 +21,31 @@ def get_user_mapping():
         data = yaml.load(fh)
 
     return data['user_mapping']
+
+
+class Backend:
+    PrefixError = PrefixError
+
+    ACTIVE_COLUMN = 'In Progress'
+
+    def __init__(self, issue_number):
+        self.issue_number = issue_number
+
+    def move_card(self, column_name):
+        self.session.move_card(self.issue_number, column_name)
+
+    @property
+    @lru_cache()
+    def session(self):
+        return Session()
+
+    @property
+    def subject(self):
+        issue = self.session.get_issue(self.issue_number)
+
+        subject = issue['summary']
+
+        return subject
 
 
 class Session:
@@ -73,3 +100,31 @@ class Session:
         response.raise_for_status()
 
         return response
+
+    def get_issue(self, issue_id: str):
+        issue_endpoint = f'{ISSUES_ENDPOINT}/{issue_id}?fields=summary'
+
+        response = self.session.get(issue_endpoint)
+
+        response.raise_for_status()
+
+        return response.json()
+
+    def move_card(self, issue_id: str, column_name: str):
+        data = {
+            "customFields": [
+                {
+                    "value": {
+                        "name": column_name,
+                    },
+                    "name": "State",
+                    "$type": "SingleEnumIssueCustomField",
+                }
+            ]
+        }
+
+        issue_endpoint = f'{ISSUES_ENDPOINT}/{issue_id}'
+
+        response = self.session.post(issue_endpoint, json=data)
+
+        response.raise_for_status()
