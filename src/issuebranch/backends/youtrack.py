@@ -3,6 +3,7 @@ import os
 from functools import lru_cache
 
 import requests
+import yaml
 
 ISSUE_BACKEND_API_KEY = os.environ.get('YOUTRACK_TOKEN')
 
@@ -10,6 +11,15 @@ YOUTRACK_API_URL = os.environ.get('YOUTRACK_API_URL')
 ISSUES_ENDPOINT = f'{YOUTRACK_API_URL}/issues'
 
 YOUTRACK_PROJECT = os.environ.get('YOUTRACK_PROJECT')
+
+
+@lru_cache()
+def get_user_mapping():
+    with open(os.path.expanduser(os.environ['YOUTRACK_USER_MAPPING']), 'r') as fh:
+        data = yaml.load(fh)
+
+    return data['user_mapping']
+
 
 class Session:
     @property
@@ -24,11 +34,19 @@ class Session:
 
         return s
 
-    def _get_custom_field(self, name, value):
+    def _get_custom_field(self, name, value, field_type=None):
+        field_type = field_type or 'SingleEnumIssueCustomField'
+
+        # if the value is a SingleEnumIssueCustomField, convert the value to a dict
+        # otherwise leave it alone
+        value = value
+        if field_type == 'SingleEnumIssueCustomField':
+            value = {'name': value}
+
         return {
             'name': name,
-            '$type': 'SingleEnumIssueCustomField',
-            'value': {'name': value},
+            '$type': field_type,
+            'value': value,
         }
 
     def create_issue(self, type: str, subsystem: str, summary: str, description: str, extra_fields: list = None):
@@ -39,7 +57,9 @@ class Session:
 
         if extra_fields:
             for field in extra_fields:
-                custom_fields.append(self._get_custom_field(field['name'], field['value']))
+                field_type = field.get('$type')
+                field_obj = self._get_custom_field(field['name'], field['value'], field_type=field_type)
+                custom_fields.append(field_obj)
 
         data = {
             'project': {'id': YOUTRACK_PROJECT},

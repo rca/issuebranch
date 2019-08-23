@@ -267,11 +267,34 @@ def github_to_youtrack():
 
     extra_fields = []
 
+    print(issue)
+
+    points = get_points(issue['labels'])
+    if points:
+        extra_fields.append({
+            '$type': 'SimpleIssueCustomField',
+            'name': 'Story points',
+            'value': float(points),
+        })
+
     if args.state:
         extra_fields.append({
             'name': 'State',
-            'value': args.state
+            'value': args.state,
         })
+
+    user_mapping = youtrack.get_user_mapping()
+
+    github_assignee = issue['assignee']
+    if github_assignee:
+        github_login = github_assignee['login']
+        yt_assignee = user_mapping.get(github_login)
+        if yt_assignee:
+            extra_fields.append({
+                '$type': 'SingleUserIssueCustomField',
+                'name': 'Assignee',
+                'value': {'login': yt_assignee},
+            })
 
     try:
         response = yt_session.create_issue(issue_type, subsystem, title, body, extra_fields=extra_fields)
