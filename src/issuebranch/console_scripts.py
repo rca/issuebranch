@@ -29,7 +29,7 @@ MAX_SLUG_LENGTH = 32
 
 SUBJECT_EXCLUDE_RE = re.compile(r'[/]')
 
-ISSUE_BRANCH_FORMAT = re.compile(r'(?P<changetype>[^/]+)/(?P<issue_number>\d+)-(?P<slug>.*)')
+ISSUE_BRANCH_FORMAT = re.compile(r'(?P<changetype>[^/]+)/(?P<issue_prefix>[-a-z]*)(?P<issue_number>\d+)-(?P<slug>.*)')
 
 
 def get_points(labels: list) -> Decimal:
@@ -243,7 +243,7 @@ def get_issue(issue_number):
 
 def github_to_youtrack():
     parser = argparse.ArgumentParser()
-    parser.add_argument('issue', type=int, help='the issue number to import into youtrack')
+    parser.add_argument('issue', help='the issue number to import into youtrack')
     parser.add_argument('--subsystem', help='the subsystem to attach the issue to')
     parser.add_argument('--state', action='store', help='What state to set the issue to, by default it will be the YouTrack default')
     parser.add_argument('--story', dest='type', action='store_const', const='Story', default='Task', help='Sets type to Story')
@@ -362,7 +362,7 @@ def issue_branch():
         help='used with pull request to indicate the card on the Kanban Board should stay where it is'
     )
     parser.add_argument('--subject', help='provide subject text instead of fetching')
-    parser.add_argument('issue_number', type=int, nargs='?', help='the issue tracker\'s issue number')
+    parser.add_argument('issue_number', nargs='?', help='the issue tracker\'s issue number')
 
     args = parser.parse_args()
 
@@ -379,15 +379,15 @@ def issue_branch():
 
             branch = line.split(' ', 1)[-1].strip()
 
-            # we are already on an issue-branch
-            is_issue_branch = True
-
             break
         else:
             return 'need an issue number from branch if no number is given as an arg'
 
         matches = ISSUE_BRANCH_FORMAT.match(branch)
         if matches:
+            # we are already on an issue-branch
+            is_issue_branch = True
+
             issue_number = matches.group('issue_number')
         else:
             return 'need an issue number as an arg'
@@ -454,7 +454,10 @@ def make_issue_branch(args, issue):
         base = proc(*command_l[1:]).stdout.decode('utf8').strip()
 
     if args.move_card:
-        move_card_column(issue_number, 'active')
+        if hasattr(issue, 'move_card'):
+            issue.move_card(issue.ACTIVE_COLUMN)
+        else:
+            move_card_column(issue_number, 'active')
 
     make_branch(slug, base)
 

@@ -8,10 +8,26 @@ Create branches based off issue number and title
 You'll need to set the following environment variables for the command to work.
 
 
+### YouTrack
+
+#### YOUTRACK_PROJECT
+
+The number for your YouTrack project, e.g. `0-0`
+
+
+#### YOUTRACK_API_URL
+
+The URL to your project, for example, the hosted version would be `https://<your_org>.myjetbrains.com/youtrack/api`
+
+
+#### YOUTRACK_TOKEN
+
+Y our personal access token, e.g. `perm:<stuff>.<more_stuff>.<even_more_stuff>`
+
+
 ### ISSUE_BACKEND
 
-Can be set to `github` or `redmine` (specifically plan.io)
-
+Can be set to `youtrack`, `github`, or `redmine` (specifically plan.io)
 
 ### ISSUE_BACKEND_API_KEY
 
@@ -53,3 +69,5 @@ The example below issue 54 is labeled with `changetype:feature` and has the titl
 [berto@g6]$ git branch | grep '^*'
 * feature/54-refactor-endpoints
 ```
+
+**Note**: YouTrack issues would have letter prefixes.  For example, issue 1931 in a project named "Super Project" would be something like `sp-1931`.
