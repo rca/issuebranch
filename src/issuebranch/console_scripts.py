@@ -357,7 +357,9 @@ def issue_branch():
         default=DEFAULT_BASE_BRANCH,
         help=f"base branch to make this branch from, default {DEFAULT_BASE_BRANCH}",
     )
-    parser.add_argument("--prefix", help="branch prefix, e.g. feature, bugfix, etc.")
+    parser.add_argument(
+        "--prefix", default="feature", help="branch prefix, e.g. feature, bugfix, etc."
+    )
     parser.add_argument(
         "--pull-request",
         "--pr",
