@@ -3,7 +3,7 @@ import re
 from issuebranch.backends.github import GithubSession
 
 
-LABEL_RE = re.compile(r'[^0-9a-z ]', flags=re.IGNORECASE)
+LABEL_RE = re.compile(r"[^0-9a-z ]", flags=re.IGNORECASE)
 
 
 def get_issue_number_from_card_data(card_data: dict) -> int:
@@ -18,11 +18,11 @@ def get_issue_number_from_card_data(card_data: dict) -> int:
     Returns:
         Issue number or None
     """
-    content_url = card_data.get('content_url')
+    content_url = card_data.get("content_url")
     if not content_url:
         return
 
-    issue_number = content_url.rsplit('/', 1)[-1]
+    issue_number = content_url.rsplit("/", 1)[-1]
 
     return int(issue_number)
 
@@ -40,7 +40,7 @@ def get_label(buf: str, prefix: str = None) -> str:
     Returns:
         str
     """
-    lower_buf = LABEL_RE.sub('', buf).lower()
+    lower_buf = LABEL_RE.sub("", buf).lower()
     lower_buf_split = lower_buf.split()
 
     if prefix:
@@ -48,11 +48,11 @@ def get_label(buf: str, prefix: str = None) -> str:
         if lower_buf_split[0] == prefix:
             lower_buf_split.pop(0)
 
-    underscored = '_'.join(lower_buf_split)
+    underscored = "_".join(lower_buf_split)
 
     label = underscored
     if prefix:
-        label = f'{prefix}:{label}'
+        label = f"{prefix}:{label}"
 
     return label
 
@@ -64,15 +64,15 @@ def label_milestone_issues():
     session = GithubSession()
 
     labels = list(session.get_labels())
-    labels_by_name = dict([(x['name'], x) for x in labels])
+    labels_by_name = dict([(x["name"], x) for x in labels])
 
     milestones = list(session.get_milestones())
 
     for milestone in milestones:
         label_data = labels_by_name[f'epic:{milestone["title"].strip()}']
 
-        for issue in session.get_issues(milestone=milestone["number"], state='all'):
-            session.add_label(label_data, number=issue['number'])
+        for issue in session.get_issues(milestone=milestone["number"], state="all"):
+            session.add_label(label_data, number=issue["number"])
 
 
 def milestone_labels(argv=None):
@@ -83,7 +83,7 @@ def milestone_labels(argv=None):
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('color', help='color to make the labels')
+    parser.add_argument("color", help="color to make the labels")
 
     args = parser.parse_args(argv)
 
@@ -91,7 +91,7 @@ def milestone_labels(argv=None):
 
     labels = session.get_labels()
 
-    labels_by_name = dict([(label['name'], label) for label in labels])
+    labels_by_name = dict([(label["name"], label) for label in labels])
 
     for milestone in session.get_milestones():
         label_name = f'epic:{milestone["title"]}'

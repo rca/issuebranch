@@ -8,6 +8,7 @@ LINK_HEADER = (
     '<https://api.github.com/projects/columns/1255924/cards?page=4>; rel="last"'
 )
 
+
 class GithubLinkHeaderTestCase(TestCase):
     def test_parse(self):
         parsed = GithubLinkHeader.parse(LINK_HEADER)
@@ -18,5 +19,7 @@ class GithubLinkHeaderTestCase(TestCase):
 
         self.assertEqual(GithubLinkHeader, type(link))
 
-        self.assertEqual('https://api.github.com/projects/columns/1255924/cards?page=2', link.url)
-        self.assertEqual('next', link.rel)
+        self.assertEqual(
+            "https://api.github.com/projects/columns/1255924/cards?page=2", link.url
+        )
+        self.assertEqual("next", link.rel)

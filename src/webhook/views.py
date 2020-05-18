@@ -10,7 +10,7 @@ from .utils import get_action_type
 class WebhookViewSet(viewsets.ViewSet):
     @property
     def logger(self):
-        return logging.getLogger(f'{__name__}.{self.__class__.__name__}')
+        return logging.getLogger(f"{__name__}.{self.__class__.__name__}")
 
     def create(self, request):
         """
@@ -24,8 +24,8 @@ class WebhookViewSet(viewsets.ViewSet):
             if handler_cls:
                 handler_cls(data).run()
             else:
-                self.logger.warning(f'No handler found for action_type={action_type}')
+                self.logger.warning(f"No handler found for action_type={action_type}")
         else:
-            self.logger.warning(f'No action_type found for data={data}')
+            self.logger.warning(f"No action_type found for data={data}")
 
-        return Response('ok')
+        return Response("ok")

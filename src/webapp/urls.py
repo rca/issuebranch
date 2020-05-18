@@ -22,9 +22,6 @@ from rest_framework import routers
 from webhook import views
 
 router = routers.DefaultRouter()
-router.register(r'webhook', views.WebhookViewSet, base_name='webhook')
+router.register(r"webhook", views.WebhookViewSet, base_name="webhook")
 
-urlpatterns = [
-    url(r'^', include(router.urls)),
-    url(r'^admin/', admin.site.urls),
-]
+urlpatterns = [url(r"^", include(router.urls)), url(r"^admin/", admin.site.urls)]

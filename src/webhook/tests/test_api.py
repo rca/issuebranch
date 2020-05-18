@@ -9,7 +9,7 @@ from webhook.tests.utils import get_project_webhook_data
 
 
 class ProjectTestCase(TestCase):
-    @mock.patch('webhook.views.handlers')
+    @mock.patch("webhook.views.handlers")
     def test_project_call(self, *mocks):
         """
         Ensure the project action is called
@@ -18,23 +18,23 @@ class ProjectTestCase(TestCase):
 
         client = APIClient()
 
-        url = reverse('webhook-list')
+        url = reverse("webhook-list")
 
-        response = client.post(url, data, format='json')
+        response = client.post(url, data, format="json")
 
         self.assertEquals(200, response.status_code)
 
         handlers_mock = mocks[0]
 
-        handlers_mock.handler_types.get.assert_called_with('project')
+        handlers_mock.handler_types.get.assert_called_with("project")
 
         handler = handlers_mock.handler_types.get.return_value
         handler.assert_called_with(data)
 
         handler.return_value.run.assert_called_with()
 
-    @mock.patch('webhook.views.WebhookViewSet.logger', new_callable=mock.PropertyMock)
-    @mock.patch('webhook.views.get_action_type')
+    @mock.patch("webhook.views.WebhookViewSet.logger", new_callable=mock.PropertyMock)
+    @mock.patch("webhook.views.get_action_type")
     def test_no_action_logged(self, *mocks):
         get_action_type_mock = mocks[0]
         get_action_type_mock.return_value = None
@@ -45,9 +45,9 @@ class ProjectTestCase(TestCase):
 
         client = APIClient()
 
-        url = reverse('webhook-list')
+        url = reverse("webhook-list")
 
-        response = client.post(url, data, format='json')
+        response = client.post(url, data, format="json")
 
         self.assertEquals(200, response.status_code)
 
