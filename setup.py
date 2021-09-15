@@ -31,5 +31,6 @@ setup(
         'requests',
         'sh',
         'python-slugify',
+        'pyyaml',
     ]
 )
