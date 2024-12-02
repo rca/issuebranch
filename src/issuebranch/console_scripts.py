@@ -378,6 +378,12 @@ def issue_branch():
         help="used with pull request to indicate the PR does not close the issue",
     )
     parser.add_argument(
+        "--no-issue",
+        action="store_false",
+        dest="get_issue",
+        help="determines if the issue is fetched from the issue tracker",
+    )
+    parser.add_argument(
         "--no-move-card",
         action="store_false",
         dest="move_card",
@@ -416,10 +422,12 @@ def issue_branch():
         else:
             return "need an issue number as an arg"
 
-    issue = get_issue(issue_number)
+    issue = None
+    if args.get_issue:
+        issue = get_issue(issue_number)
 
     if not is_issue_branch:
-        make_issue_branch(args, issue)
+        make_issue_branch(args, issue, issue_number=issue_number)
 
     # open a pull-request
     if args.pull_request:
@@ -436,8 +444,8 @@ def issue_branch():
         )
 
 
-def make_issue_branch(args, issue):
-    issue_number = issue.issue_number
+def make_issue_branch(args, issue, issue_number=None):
+    issue_number = issue_number or issue.issue_number
 
     prefix = args.prefix
     if not prefix:
