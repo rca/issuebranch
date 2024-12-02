@@ -25,7 +25,7 @@ from issuebranch.shell import run_command
 from issuebranch.settings import SCRUM_BOARD_NAME, DEFAULT_COLUMN_NAME
 
 DEFAULT_BASE_BRANCH = "origin/main"
-MAX_SLUG_LENGTH = 32
+MAX_SLUG_LENGTH = 128
 
 SUBJECT_EXCLUDE_RE = re.compile(r"[/]")
 
