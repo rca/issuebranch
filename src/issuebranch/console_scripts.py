@@ -396,8 +396,11 @@ def issue_branch():
 
     args = parser.parse_args()
 
+    issue_arg = args.issue_number
+    if issue_arg.startswith('http'):
+        _, issue_number = issue_arg.rsplit('/', 1)
+
     is_issue_branch = False
-    issue_number = args.issue_number
     if not issue_number:
         result = run_command("git branch --no-color")
         for line in result.splitlines():
