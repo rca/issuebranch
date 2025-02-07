@@ -396,8 +396,8 @@ def issue_branch():
 
     args = parser.parse_args()
 
-    issue_arg = args.issue_number
-    if issue_arg.startswith('http'):
+    issue_number = args.issue_number
+    if issue_number.startswith('http'):
         _, issue_number = issue_arg.rsplit('/', 1)
 
     is_issue_branch = False
