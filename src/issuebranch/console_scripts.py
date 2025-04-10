@@ -398,7 +398,7 @@ def issue_branch():
 
     issue_number = args.issue_number
     if issue_number.startswith('http'):
-        _, issue_number = issue_arg.rsplit('/', 1)
+        _, issue_number = issue_number.rsplit('/', 1)
 
     is_issue_branch = False
     if not issue_number:
